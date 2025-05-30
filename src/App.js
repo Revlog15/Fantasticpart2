@@ -1,12 +1,19 @@
 import React from "react";
-import Game from "./Game";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import CharacterSelect from "./components/CharacterSelect";
+import Game from "./components/Game";
 import "./App.css";
 
 function App() {
   return (
-    <div className="App">
-      <Game />
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<CharacterSelect />} />
+          <Route path="/game" element={<Game />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

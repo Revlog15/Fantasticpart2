@@ -1,0 +1,182 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.game-title {
+  font-size: 48px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.game-subtitle {
+  font-size: 24px;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+h1 {
+  font-size: 36px;
+  margin-bottom: 40px;
+  color: #333;
+}
+
+.character-selection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.arrow {
+  font-size: 36px;
+  cursor: pointer;
+  padding: 10px;
+  color: #333;
+  transition: color 0.3s;
+}
+
+.arrow:hover {
+  color: #666;
+}
+
+.character-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+}
+
+.character {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.character.active {
+  opacity: 1;
+}
+
+.character-name {
+  font-size: 24px;
+  margin: 20px 0;
+  color: #333;
+}
+
+.name-input-container {
+  margin-bottom: 20px;
+}
+
+.name-input-container input {
+  padding: 10px 20px;
+  font-size: 18px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  width: 300px;
+  max-width: 100%;
+}
+
+.character-description {
+  background-color: #f8f8f8;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 600px;
+}
+
+.character-description h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.character-description p {
+  font-size: 16px;
+  margin: 10px 0;
+  color: #666;
+}
+
+.continue-button {
+  padding: 15px 40px;
+  font-size: 24px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.continue-button:hover {
+  background-color: #45a049;
+}
+
+.continue-button:active {
+  background-color: #3d8b40;
+}
+
+.character-select-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+}
+
+.character-list {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.character-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.character-option:hover {
+  border-color: #007bff;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+.character-image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.character-option p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}

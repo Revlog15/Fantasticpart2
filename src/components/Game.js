@@ -132,31 +132,31 @@ function Game() {
 
   // Define signs for the main map
   const signs = [
-    {
-      id: 1,
-      x: 820,
-      y: 186,
-      name: "Glora Bung Karno",
-      description:
-        "The central administrative building of the town. Here you can find important information and quests.",
-    },
-    {
-      id: 2,
-      x: 220,
-      y: 621,
-      name: "UMN",
-      description:
-        "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
-    },
-    {
-      id: 3,
-      x: 805,
-      y: 456,
-      name: "Danau TOBA",
-      description:
-        "A place to train and improve your skills. Various training facilities are available for different abilities.",
-    },
-  ];
+  {
+    id: 1,
+    x: 820,
+    y: 186,
+    name: "Glora Bung Karno",
+    description:
+      "The central administrative building of the town. Here you can find important information and quests.",
+  },
+  {
+    id: 2,
+    x: 220,
+    y: 621,
+    name: "UMN", 
+    description:
+      "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
+  },
+  {
+    id: 3,
+    x: 805,
+    y: 456,
+    name: "Danau TOBA",
+    description:
+      "A place to train and improve your skills. Various training facilities are available for different abilities.",
+  },
+];
 
   // Define town coordinates
   const towns = {
@@ -184,19 +184,25 @@ function Game() {
   };
 
   // Check if character is near a sign
-  const checkNearSign = (x, y) => {
-    const SIGN_DETECTION_RADIUS = 50;
-    for (const sign of signs) {
-      const distance = Math.sqrt(
-        Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
-      );
-      if (distance < SIGN_DETECTION_RADIUS) {
-        setNearSign(sign);
-        return;
-      }
+const checkNearSign = (x, y) => {
+  const SIGN_DETECTION_RADIUS = 80; // Increased detection radius
+  console.log("Checking signs at position:", x, y); // Debug log
+  
+  for (const sign of signs) {
+    const distance = Math.sqrt(
+      Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
+    );
+    console.log(`Distance to ${sign.name}:`, distance); // Debug log
+    
+    if (distance < SIGN_DETECTION_RADIUS) {
+      console.log("Near sign:", sign.name); // Debug log
+      setNearSign(sign);
+      return;
     }
-    setNearSign(null);
-  };
+  }
+  console.log("Not near any sign"); // Debug log
+  setNearSign(null);
+};
 
   // Helper function to get the correct image name
   const getImageName = (direction) => {
@@ -257,9 +263,15 @@ function Game() {
 
   // Effect to check proximity to towns and signs after movement
   useEffect(() => {
-    checkNearTown(position.x, position.y);
-    checkNearSign(position.x, position.y);
-  }, [position]);
+  console.log("Position changed, checking proximity:", position); // Debug log
+  checkNearTown(position.x, position.y);
+  checkNearSign(position.x, position.y);
+}, [position]);
+
+// Also add this debug info to see nearSign state:
+useEffect(() => {
+  console.log("nearSign state changed:", nearSign);
+}, [nearSign]);
 
   // Handle keydown for keyboard movement
   useEffect(() => {
@@ -406,6 +418,33 @@ function Game() {
         ref={gameContainerRef} // Added ref back
         tabIndex="-1" // Make the div focusable
       >
+        {/* Nama player di pojok kiri atas dan ucapan selamat datang */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            color: '#fff',
+            padding: '6px 12px',
+            borderRadius: '4px',
+            zIndex: 200,
+            fontFamily: `'Press Start 2P', 'Courier New', monospace`,
+            fontWeight: 'bold',
+            fontSize: '12px',
+            letterSpacing: '1px',
+            boxShadow: '2px 2px 0 #222',
+            border: '2px solid #333',
+            textShadow: '1px 1px 0 #000',
+            lineHeight: 1.3,
+          }}
+        >
+          {playerName}
+          <div style={{ fontWeight: 'normal', fontSize: '10px', marginTop: 2 }}>
+            Selamat datang, {playerName}!
+          </div>
+        </div>
+
         {/* Character Coordinate Display */}
         <div
           style={{
@@ -450,63 +489,57 @@ function Game() {
           <button className="inventory-button" onClick={toggleInventory}>
             Inventory
           </button>
+          {nearSign && (
+            <button className="explore-button" onClick={handleCheckOut}>
+              Check out {nearSign.name}
+            </button>
+          )}
           {showExploreButton && (
             <button className="explore-button" onClick={exploreTown}>
               Explore
-            </button>
-          )}
-          {nearSign && (
-            <button className="check-out-button" onClick={handleCheckOut}>
-              Check out {nearSign.name}
             </button>
           )}
         </div>
 
         {/* Character Stats */}
         <div className="character-stats">
-          <h3>{playerName}</h3>
           <div className="stat-item">
             <span>Happiness:</span>
-            <div className="stat-bar">
+            <div className="stat-bar happiness-bar">
               <div
                 className="stat-fill"
-                style={{ width: `${stats.happiness}%` }}
-              ></div>
+                style={{ width: `${stats.happiness}%`, imageRendering: 'pixelated', border: '1.5px solid #222' }}
+              >
+                <div className="stat-percentage">{stats.happiness}%</div>
+              </div>
             </div>
-            <span>{stats.happiness}%</span>
           </div>
           <div className="stat-item">
             <span>Hunger:</span>
-            <div className="stat-bar">
+            <div className="stat-bar hunger-bar">
               <div
                 className="stat-fill"
-                style={{ width: `${stats.hunger}%` }}
-              ></div>
+                style={{ width: `${stats.hunger}%`, imageRendering: 'pixelated', border: '1.5px solid #222' }}
+              >
+                <div className="stat-percentage">{stats.hunger}%</div>
+              </div>
             </div>
-            <span>{stats.hunger}%</span>
           </div>
           <div className="stat-item">
             <span>Sleep:</span>
-            <div className="stat-bar">
+            <div className="stat-bar sleep-bar">
               <div
                 className="stat-fill"
-                style={{ width: `${stats.sleep}%` }}
-              ></div>
+                style={{ width: `${stats.sleep}%`, imageRendering: 'pixelated', border: '1.5px solid #222' }}
+              >
+                <div className="stat-percentage">{stats.sleep}%</div>
+              </div>
             </div>
-            <span>{stats.sleep}%</span>
           </div>
-          <div className="stat-item">
+          <div className="stat-item gold-item">
             <span>Gold:</span>
             <span className="gold-amount">{stats.gold}</span>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          <button onClick={work}>Work</button>
-          <button onClick={eat}>Eat</button>
-          <button onClick={sleep}>Sleep</button>
-          <button onClick={explore}>Explore</button>
         </div>
 
         {/* Sign Details Modal */}

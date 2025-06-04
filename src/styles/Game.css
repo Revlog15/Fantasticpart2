@@ -11,13 +11,12 @@
 .arrow-keys {
   position: absolute;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 60; /* Above action bars */
+  right: 20px;
+  z-index: 1000; /* Ensure they are on top */
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 5px; /* Back to original gap */
 }
 
 .arrow-keys .left-right {
@@ -26,36 +25,33 @@
 }
 
 .arrow-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white */
-  border: 1px solid #ccc;
+  width: 45px; /* Slightly smaller */
+  height: 45px;
+  border-radius: 0; /* Sharp corners */
+  background-color: #555; /* Dark grey */
+  border: 2px solid #000; /* Black border */
   cursor: pointer;
-  display: flex;
-  justify-content: center;
+  display: flex; /* Center content */
   align-items: center;
-  font-size: 1.2em;
-  font-weight: bold;
+  justify-content: center;
+  font-size: 1.3rem; /* Slightly smaller arrow icon */
+  color: white; /* White arrow color */
+  text-shadow: 1px 1px 0px #000; /* Text shadow for arrow */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #888,
+    2px 2px 4px rgba(0, 0, 0, 0.5); /* Pixel art shadow */
+  transition: all 0.1s ease-in-out; /* Faster transition */
 }
 
 .arrow-button:active {
-  background-color: #eee;
+  background-color: #333; /* Darker on active/press */
+  box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
+    1px 1px 2px rgba(0, 0, 0, 0.4); /* Pressed in shadow */
 }
 
-.stat-bar {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 10px;
-  border-radius: 5px;
-  z-index: 10;
-}
-
-.stat-bar div {
-  margin-bottom: 5px;
+.arrow-button:hover {
+  background-color: #777; /* Slightly lighter on hover */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #999,
+    2px 2px 6px rgba(0, 0, 0, 0.6); /* Deeper shadow on hover */
 }
 
 /* Health Bar Styling */
@@ -79,7 +75,6 @@
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
   padding: 10px;
   border-radius: 10px;
   z-index: 50;
@@ -87,19 +82,35 @@
   gap: 10px;
 }
 
-.inventory-button {
-  background-color: rgba(255, 255, 255, 0.7);
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+.inventory-button,
+.explore-button,
+.check-out-button {
   padding: 8px 16px;
-  font-size: 16px;
+  font-size: 1rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.1s ease-in-out; /* Faster transition for pixel feel */
+  background-color: #555; /* Dark background for pixel theme */
+  color: white;
+  border: 1px solid #555; /* Lighter border */
+  border-radius: 0;
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #888,
+    2px 2px 4px rgba(0, 0, 0, 0.5); /* Pixel art shadow */
 }
 
-.inventory-button:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  transform: scale(1.05);
+.inventory-button:hover,
+.explore-button:hover,
+.check-out-button:hover {
+  background-color: #777; /* Slightly lighter on hover */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #999,
+    2px 2px 6px rgba(0, 0, 0, 0.6); /* Deeper shadow on hover */
+}
+
+.inventory-button:active,
+.explore-button:active,
+.check-out-button:active {
+  background-color: #333; /* Darker on active/press */
+  box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
+    1px 1px 2px rgba(0, 0, 0, 0.4); /* Pressed in shadow */
 }
 
 /* Inventory Modal */
@@ -117,9 +128,11 @@
 }
 
 .inventory-content {
-  background-color: white;
+  background-color: rgba(51, 51, 51, 0.9); /* Semi-transparent dark grey */
   padding: 20px;
-  border-radius: 10px;
+  /* border-radius: 10px; Removed for pixel art */
+  border: 2px solid #000; /* Pixel border */
+  box-shadow: 4px 4px 0px #000; /* Pixel shadow */
   max-width: 500px;
   width: 90%;
   max-height: 80%;
@@ -128,8 +141,19 @@
 
 .inventory-content h2 {
   margin-top: 0;
-  color: #333;
+  /* color: #333; Removed */
   text-align: center;
+  /* border-bottom: 1px solid #ccc; Removed */
+  padding-bottom: 10px;
+  /* Add pixel art styles */
+  font-family: 'Press Start 2P', cursive;
+  color: #fff; /* White text */
+  text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00, 0 0 15px #ffff00; /* Glow effect */
+  border-bottom: 2px solid #fff; /* More prominent border */
+  padding-bottom: 5px; /* Adjusted padding */
+  margin-bottom: 15px; /* Added margin */
+  background-color: #555; /* Dark background for heading */
+  padding: 10px; /* Added padding */
 }
 
 .inventory-items {
@@ -142,6 +166,7 @@
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid #eee;
+  color: #333; /* Dark text for items */
 }
 
 .inventory-item:last-child {
@@ -153,12 +178,17 @@
   color: white;
   border: none;
   padding: 4px 8px;
-  border-radius: 4px;
   cursor: pointer;
+  border-radius: 0;
+  box-shadow: inset -1px -1px 0px #000, inset 1px 1px 0px #888;
 }
 
 .inventory-item button:hover {
   background-color: #cc0000;
+}
+
+.inventory-item button:active {
+  box-shadow: inset 1px 1px 0px #000, inset -1px -1px 0px #888;
 }
 
 .close-inventory {
@@ -168,30 +198,22 @@
   background-color: #4caf50;
   color: white;
   border: none;
-  border-radius: 6px;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0px #000;
   cursor: pointer;
   font-size: 16px;
   margin-top: 10px;
+  transition: all 0.1s ease-in-out;
+  font-family: "Press Start 2P", cursive;
 }
 
 .close-inventory:hover {
   background-color: #45a049;
+  box-shadow: 2px 2px 0px #000;
 }
 
-.explore-button {
-  background-color: rgba(255, 255, 255, 0.7);
-  border: 2px solid rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-left: 10px;
-}
-
-.explore-button:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  transform: scale(1.05);
+.close-inventory:active {
+  box-shadow: inset 2px 2px 0px #000;
 }
 
 .town-container {
@@ -267,7 +289,6 @@
   cursor: pointer;
   font-weight: bold;
   transition: all 0.3s ease;
-  margin-left: 10px;
 }
 
 .check-out-button:hover {
@@ -275,54 +296,253 @@
   color: #8b4513;
 }
 
-/* Character Stats */
+/* Character Stats with Pixel Art Progress Bars */
 .character-stats {
   position: absolute;
   top: 20px;
-  left: 20px;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-  color: white;
-  padding: 15px;
-  border-radius: 10px;
-  z-index: 50; /* Above map, below character/modals */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 40px; /* Increased gap for more spacing */
+  align-items: center;
+  z-index: 50;
+  font-family: "Courier New", monospace;
+}
+
+.character-stats h3 {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  margin: 0;
+  text-shadow: 1px 1px 0px #000;
+  border: 2px solid #555;
+  white-space: nowrap;
 }
 
 .stat-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 5px;
+  gap: 0;
+  margin: 0;
 }
 
 .stat-item span {
-  margin-right: 10px;
-  min-width: 80px; /* Align stat names */
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px #000;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
+/* Pixel Art Style Progress Bars */
 .stat-bar {
-  flex-grow: 1;
-  height: 10px;
-  background-color: #555;
-  border-radius: 5px;
+  position: relative;
+  width: 120px;
+  height: 24px; /* Perbesar tinggi bar */
+  background: linear-gradient(90deg, #333 0%, #555 50%, #333 100%);
+  border: 1px solid #555; /* Lighter border */
+  border-radius: 0;
   overflow: hidden;
 }
 
+.stat-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #666, #999, #666);
+  z-index: 3;
+}
+
+.stat-bar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #666, #555, #666); /* Lighter gradient */
+  z-index: 3;
+}
+
 .stat-fill {
+  position: relative;
   height: 100%;
-  background-color: #4caf50; /* Green color for fill */
   transition: width 0.3s ease-in-out;
+  z-index: 2;
+  image-rendering: pixelated;
+  border: none; /* Remove inner border */
+}
+
+/* Happiness Bar - Red to Green Gradient */
+.happiness-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #ff4444 0%,
+      /* Red */ #ff8844 25%,
+      /* Orange */ #ffff44 50%,
+      /* Yellow */ #88ff44 75%,
+      /* Light Green */ #44ff44 100% /* Green */
+    );
+}
+
+/* Hunger Bar - Orange to Yellow Gradient */
+.hunger-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #ff6600 0%,
+      /* Dark Orange */ #ff8833 25%,
+      /* Orange */ #ffaa55 50%,
+      /* Light Orange */ #ffcc77 75%,
+      /* Pale Orange */ #ffdd88 100% /* Light Yellow */
+    );
+}
+
+/* Sleep Bar - Blue to Light Blue Gradient */
+.sleep-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #2266ff 0%,
+      /* Dark Blue */ #4488ff 25%,
+      /* Blue */ #66aaff 50%,
+      /* Light Blue */ #88ccff 75%,
+      /* Lighter Blue */ #aaeeff 100% /* Very Light Blue */
+    );
+}
+
+/* Hygiene Bar - Light Blue to White Gradient */
+.hygiene-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #88ccff 0%,
+      /* Light Blue */ #aaddff 25%,
+      /* Lighter Blue */ #cceeff 50%,
+      /* Very Light Blue */ #ddeeff 75%,
+      /* Pale Blue */ #ffffff 100% /* White */
+    );
+}
+
+/* Percentage Text */
+.stat-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: none;
+  z-index: 4;
+  font-family: "Courier New", monospace;
+}
+
+.gold-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.gold-item span:first-child {
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: none;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .gold-amount {
   font-weight: bold;
-  color: gold; /* Gold color for gold amount */
+  color: #ffd700;
+  text-shadow: none;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 2px solid #555;
 }
 
-/* Action Buttons */
-.action-buttons {
+/* Time Display Styling */
+.time-display-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 150;
+}
+
+.time-display {
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #555;
+  text-align: center;
+}
+
+.time-display span {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 6px;
+  text-shadow: none;
+  font-family: "Courier New", monospace;
+}
+
+.time-text {
+  font-family: "Courier New", monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: none;
+  background: linear-gradient(90deg, #88ccff, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding: 2px 4px;
+  letter-spacing: 1px;
+}
+
+/* Action Buttons (Pixelated Theme) */
+.action-bar {
   position: absolute;
   bottom: 20px;
-  right: 20px;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  left: 20px;
   padding: 10px;
   border-radius: 10px;
   z-index: 50;
@@ -330,23 +550,356 @@
   gap: 10px;
 }
 
-.action-buttons button {
-  padding: 10px 20px;
-  font-size: 16px;
+.action-bar button {
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+  background-color: #777; /* Lighter grey */
+  color: white;
+  border: 1px solid #555; /* Lighter border */
+  border-radius: 0;
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #888,
+    2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.action-bar button:hover {
+  background-color: #999; /* Even lighter on hover */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #999,
+    2px 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.action-bar button:active {
+  background-color: #555; /* Darker on active/press (original button color) */
+  box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
+    1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Character Stats with Pixel Art Progress Bars */
+.character-stats {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 40px; /* Increased gap for more spacing */
+  align-items: center;
+  z-index: 50;
+  font-family: "Courier New", monospace;
+}
+
+.character-stats h3 {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 8px 15px;
+  border-radius: 8px;
+  margin: 0;
+  text-shadow: 1px 1px 0px #000;
+  border: 2px solid #555;
+  white-space: nowrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+}
+
+.stat-item span {
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 1px 1px 0px #000;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Pixel Art Style Progress Bars */
+.stat-bar {
+  position: relative;
+  width: 120px;
+  height: 24px; /* Perbesar tinggi bar */
+  background: linear-gradient(90deg, #333 0%, #555 50%, #333 100%);
+  border: 1px solid #555; /* Lighter border */
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.stat-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #666, #999, #666);
+  z-index: 3;
+}
+
+.stat-bar::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #666, #555, #666); /* Lighter gradient */
+  z-index: 3;
+}
+
+.stat-fill {
+  position: relative;
+  height: 100%;
+  transition: width 0.3s ease-in-out;
+  z-index: 2;
+  image-rendering: pixelated;
+  border: none; /* Remove inner border */
+}
+
+/* Happiness Bar - Red to Green Gradient */
+.happiness-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #ff4444 0%,
+      /* Red */ #ff8844 25%,
+      /* Orange */ #ffff44 50%,
+      /* Yellow */ #88ff44 75%,
+      /* Light Green */ #44ff44 100% /* Green */
+    );
+}
+
+/* Hunger Bar - Orange to Yellow Gradient */
+.hunger-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #ff6600 0%,
+      /* Dark Orange */ #ff8833 25%,
+      /* Orange */ #ffaa55 50%,
+      /* Light Orange */ #ffcc77 75%,
+      /* Pale Orange */ #ffdd88 100% /* Light Yellow */
+    );
+}
+
+/* Sleep Bar - Blue to Light Blue Gradient */
+.sleep-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #2266ff 0%,
+      /* Dark Blue */ #4488ff 25%,
+      /* Blue */ #66aaff 50%,
+      /* Light Blue */ #88ccff 75%,
+      /* Lighter Blue */ #aaeeff 100% /* Very Light Blue */
+    );
+}
+
+/* Hygiene Bar - Light Blue to White Gradient */
+.hygiene-bar .stat-fill {
+  background: repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.18) 0px,
+      rgba(0, 0, 0, 0.18) 6px,
+      transparent 6px,
+      transparent 12px
+    ),
+    linear-gradient(
+      90deg,
+      #88ccff 0%,
+      /* Light Blue */ #aaddff 25%,
+      /* Lighter Blue */ #cceeff 50%,
+      /* Very Light Blue */ #ddeeff 75%,
+      /* Pale Blue */ #ffffff 100% /* White */
+    );
+}
+
+/* Percentage Text */
+.stat-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: none;
+  z-index: 4;
+  font-family: "Courier New", monospace;
+}
+
+.gold-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.gold-item span:first-child {
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: none;
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.gold-amount {
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: none;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 2px solid #555;
+}
+
+/* Time Display Styling */
+.time-display-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 150;
+}
+
+.time-display {
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #555;
+  text-align: center;
+}
+
+.time-display span {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 6px;
+  text-shadow: none;
+  font-family: "Courier New", monospace;
+}
+
+.time-text {
+  font-family: "Courier New", monospace;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: none;
+  background: linear-gradient(90deg, #88ccff, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding: 2px 4px;
+  letter-spacing: 1px;
+}
+
+/* Inventory Modal */
+.inventory-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+
+.inventory-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto;
+}
+
+.inventory-content h2 {
+  margin-top: 0;
+  color: #333;
+  text-align: center;
+}
+
+.inventory-items {
+  margin-top: 15px;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.inventory-item:last-child {
+  border-bottom: none;
+}
+
+.inventory-item button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: inset -1px -1px 0px #000, inset 1px 1px 0px #888;
+}
+
+.inventory-item button:hover {
+  background-color: #cc0000;
+}
+
+.close-inventory {
+  display: block;
+  width: 100%;
+  padding: 10px;
   background-color: #4caf50;
   color: white;
   border: none;
-  border-radius: 5px;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0px #000;
   cursor: pointer;
-  transition: background-color 0.3s;
+  font-size: 16px;
+  margin-top: 10px;
+  transition: all 0.1s ease-in-out;
+  font-family: "Press Start 2P", cursive;
 }
 
-.action-buttons button:hover {
+.close-inventory:hover {
   background-color: #45a049;
+  box-shadow: 2px 2px 0px #000;
 }
 
-.action-buttons button:active {
-  background-color: #3d8b40;
+.close-inventory:active {
+  box-shadow: inset 2px 2px 0px #000;
 }
 
 .test-paragraph {
@@ -359,4 +912,117 @@
   z-index: 100;
   font-size: 24px;
   font-weight: bold;
+}
+
+/* Death Screen Styles */
+.death-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.death-content {
+  background: rgba(0, 0, 0, 0.8);
+  border: 3px solid #ff0000;
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  color: #fff;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+  animation: scaleIn 0.5s ease-out;
+}
+
+.death-content h1 {
+  color: #ff0000;
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+  font-family: "Press Start 2P", cursive;
+}
+
+.death-stats {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.death-stats h2 {
+  color: #ffd700;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-family: "Press Start 2P", cursive;
+}
+
+.death-stats p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+  color: #fff;
+  font-family: "Press Start 2P", cursive;
+}
+
+.final-score {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+}
+
+.final-score h2 {
+  color: #ffd700;
+  font-size: 1.8rem;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  font-family: "Press Start 2P", cursive;
+}
+
+.restart-button {
+  background: linear-gradient(45deg, #ff0000, #ff4444);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: "Press Start 2P", cursive;
+  text-transform: uppercase;
+  margin-top: 1rem;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.3);
+}
+
+.restart-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

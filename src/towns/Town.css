@@ -1,7 +1,7 @@
 .town {
   width: 100vw;
   height: 100vh;
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   background-size: cover;
@@ -9,6 +9,7 @@
   background-repeat: no-repeat;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .town-header {
@@ -144,4 +145,177 @@
 
 .close-button:hover {
   background-color: #45a049;
+}
+
+.action-buttons {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 1000;
+}
+
+.action-buttons button {
+  padding: 0.75rem 1.5rem;
+  background-color: #555; /* Dark background for pixel theme */
+  color: white;
+  border: 2px solid #000; /* Black border */
+  border-radius: 0;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.1s ease-in-out; /* Faster transition for pixel feel */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #888,
+    2px 2px 4px rgba(0, 0, 0, 0.5); /* Pixel art shadow */
+}
+
+.action-buttons button:hover {
+  background-color: #777; /* Slightly lighter on hover */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #999,
+    2px 2px 6px rgba(0, 0, 0, 0.6); /* Deeper shadow on hover */
+}
+
+.action-buttons button:active {
+  background-color: #333; /* Darker on active/press */
+  box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
+    1px 1px 2px rgba(0, 0, 0, 0.4); /* Pressed in shadow */
+}
+
+/* Inventory Button */
+.inventory-button {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.inventory-button:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* Inventory Modal */
+.inventory-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200; /* Above everything else */
+}
+
+.inventory-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80%;
+  overflow-y: auto; /* Add scroll for long content */
+}
+
+.inventory-content h2 {
+  margin-top: 0;
+  color: #333;
+  text-align: center;
+}
+
+.inventory-items {
+  margin-top: 15px;
+}
+
+.inventory-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.inventory-item:last-child {
+  border-bottom: none;
+}
+
+.inventory-item button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inventory-item button:hover {
+  background-color: #cc0000;
+}
+
+.close-inventory {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+.close-inventory:hover {
+  background-color: #45a049;
+}
+
+.arrow-keys {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000; /* Ensure they are on top */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px; /* Back to original gap */
+}
+
+.left-right {
+  display: flex;
+  gap: 5px;
+}
+
+.arrow-button {
+  width: 45px; /* Slightly smaller */
+  height: 45px;
+  border-radius: 0; /* Sharp corners */
+  background-color: #555; /* Dark grey */
+  border: 2px solid #000; /* Black border */
+  cursor: pointer;
+  display: flex; /* Center content */
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem; /* Slightly smaller arrow icon */
+  color: white; /* White arrow color */
+  text-shadow: 1px 1px 0px #000; /* Text shadow for arrow */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #888,
+    2px 2px 4px rgba(0, 0, 0, 0.5); /* Pixel art shadow */
+  transition: all 0.1s ease-in-out; /* Faster transition */
+}
+
+.arrow-button:hover {
+  background-color: #777; /* Slightly lighter on hover */
+  box-shadow: inset -2px -2px 0px #000, inset 2px 2px 0px #999,
+    2px 2px 6px rgba(0, 0, 0, 0.6); /* Deeper shadow on hover */
+}
+
+.arrow-button:active {
+  background-color: #333; /* Darker on active/press */
+  box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
+    1px 1px 2px rgba(0, 0, 0, 0.4); /* Pressed in shadow */
 }

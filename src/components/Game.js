@@ -29,11 +29,24 @@ function Game() {
   const positionRef = useRef(position); // Create a ref for position
 
   // Character stats
-  const [stats, setStats] = useState({
-    happiness: 100,
-    hunger: 100,
-    sleep: 100,
-    gold: 0,
+  const [stats, setStats] = useState(() => {
+    const savedStats = localStorage.getItem("gameStats");
+    return savedStats
+      ? JSON.parse(savedStats)
+      : {
+          happiness: 100,
+          hunger: 100,
+          sleep: 100,
+          hygiene: 100,
+          gold: 0,
+        };
+  });
+
+  // Add time state
+  const [gameTime, setGameTime] = useState({
+    hours: 6, // Start at 6 AM
+    minutes: 0,
+    day: 1,
   });
 
   // Add inventory state
@@ -43,6 +56,8 @@ function Game() {
   const [showExploreButton, setShowExploreButton] = useState(false);
   const [nearSign, setNearSign] = useState(null);
   const [showSignDetails, setShowSignDetails] = useState(false);
+  const [showDeathScreen, setShowDeathScreen] = useState(false);
+  const [finalScore, setFinalScore] = useState(0);
 
   console.log("Initial Character Image:", `${selectedCharacter}-idle`); // Debug log
   console.log("Full Image Path:", `/Picture/${selectedCharacter}-idle.png`); // Debug log
@@ -52,13 +67,27 @@ function Game() {
 
   // Update stats with limits
   const updateStats = () => {
+    setStats((prevStats) => {
+      const newStats = {
+        ...prevStats,
+        happiness: Math.max(0, Math.min(100, prevStats.happiness)),
+        hunger: Math.max(0, Math.min(100, prevStats.hunger)),
+        sleep: Math.max(0, Math.min(100, prevStats.sleep)),
+        hygiene: Math.max(0, Math.min(100, prevStats.hygiene)),
+        gold: Math.max(0, prevStats.gold),
+      };
+      localStorage.setItem("gameStats", JSON.stringify(newStats));
+      return newStats;
+    });
+  };
+
+  // Function to update specific stats
+  const updateSpecificStats = (newStats) => {
     setStats((prevStats) => ({
       ...prevStats,
-      happiness: Math.max(0, Math.min(100, prevStats.happiness)),
-      hunger: Math.max(0, Math.min(100, prevStats.hunger)),
-      sleep: Math.max(0, Math.min(100, prevStats.sleep)),
-      gold: Math.max(0, prevStats.gold), // Gold cannot be negative
+      ...newStats,
     }));
+    updateStats();
   };
 
   // Game actions
@@ -69,6 +98,7 @@ function Game() {
       happiness: prevStats.happiness - 5,
       hunger: prevStats.hunger - 10,
       sleep: prevStats.sleep - 5,
+      hygiene: prevStats.hygiene - 5,
     }));
     updateStats();
   };
@@ -80,6 +110,7 @@ function Game() {
         gold: prevStats.gold - 5,
         hunger: prevStats.hunger + 20,
         happiness: prevStats.happiness + 5,
+        hygiene: prevStats.hygiene - 2,
       }));
       updateStats();
     } else {
@@ -92,6 +123,7 @@ function Game() {
       ...prevStats,
       sleep: prevStats.sleep + 30,
       hunger: prevStats.hunger - 10,
+      hygiene: prevStats.hygiene - 5,
     }));
     updateStats();
   };
@@ -102,6 +134,7 @@ function Game() {
       happiness: prevStats.happiness + 15,
       hunger: prevStats.hunger - 10,
       sleep: prevStats.sleep - 10,
+      hygiene: prevStats.hygiene - 10,
     }));
     updateStats();
   };
@@ -114,6 +147,7 @@ function Game() {
         happiness: prevStats.happiness > 0 ? prevStats.happiness - 1 : 0,
         hunger: prevStats.hunger > 0 ? prevStats.hunger - 1 : 0,
         sleep: prevStats.sleep > 0 ? prevStats.sleep - 1 : 0,
+        hygiene: prevStats.hygiene > 0 ? prevStats.hygiene - 1 : 0,
       }));
     }, 5000); // Decrease stats every 5 seconds
 
@@ -129,6 +163,56 @@ function Game() {
   useEffect(() => {
     positionRef.current = position;
   }, [position]); // Update ref whenever position state changes
+
+  // Add time tracking effect
+  useEffect(() => {
+    const timeInterval = setInterval(() => {
+      setGameTime((prevTime) => {
+        let newMinutes = prevTime.minutes + 1;
+        let newHours = prevTime.hours;
+        let newDay = prevTime.day;
+
+        if (newMinutes >= 60) {
+          newMinutes = 0;
+          newHours += 1;
+        }
+
+        if (newHours >= 24) {
+          newHours = 0;
+          newDay += 1;
+        }
+
+        return {
+          hours: newHours,
+          minutes: newMinutes,
+          day: newDay,
+        };
+      });
+    }, 1000); // Update every second
+
+    return () => clearInterval(timeInterval);
+  }, []);
+
+  // Format time for display
+  const formatTime = (hours, minutes) => {
+    const period = hours >= 12 ? "PM" : "AM";
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, "0");
+    return `${displayHours}:${displayMinutes} ${period}`;
+  };
+
+  // Get greeting based on game time
+  const getGreeting = (hours) => {
+    if (hours >= 5 && hours < 12) {
+      return "Selamat pagi";
+    } else if (hours >= 12 && hours < 15) {
+      return "Selamat siang";
+    } else if (hours >= 15 && hours < 19) {
+      return "Selamat sore";
+    } else {
+      return "Selamat malam";
+    }
+  };
 
   // Define signs for the main map
   const signs = [
@@ -185,16 +269,22 @@ function Game() {
 
   // Check if character is near a sign
   const checkNearSign = (x, y) => {
-    const SIGN_DETECTION_RADIUS = 50;
+    const SIGN_DETECTION_RADIUS = 80; // Increased detection radius
+    console.log("Checking signs at position:", x, y); // Debug log
+
     for (const sign of signs) {
       const distance = Math.sqrt(
         Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
       );
+      console.log(`Distance to ${sign.name}:`, distance); // Debug log
+
       if (distance < SIGN_DETECTION_RADIUS) {
+        console.log("Near sign:", sign.name); // Debug log
         setNearSign(sign);
         return;
       }
     }
+    console.log("Not near any sign"); // Debug log
     setNearSign(null);
   };
 
@@ -257,9 +347,15 @@ function Game() {
 
   // Effect to check proximity to towns and signs after movement
   useEffect(() => {
+    console.log("Position changed, checking proximity:", position); // Debug log
     checkNearTown(position.x, position.y);
     checkNearSign(position.x, position.y);
   }, [position]);
+
+  // Also add this debug info to see nearSign state:
+  useEffect(() => {
+    console.log("nearSign state changed:", nearSign);
+  }, [nearSign]);
 
   // Handle keydown for keyboard movement
   useEffect(() => {
@@ -354,18 +450,25 @@ function Game() {
   };
 
   // Function to explore town
-  const exploreTown = () => {
-    const townId = checkNearTown(position.x, position.y);
-    if (townId) {
-      setCurrentTown(townId);
-      // Optionally reset character position or hide it when in town view
-    }
+  const exploreTown = (townId) => {
+    // Set the current town state to trigger the town component render
+    setCurrentTown(townId);
+
+    // Store the current position to return to later
+    localStorage.setItem(
+      "returnPosition",
+      JSON.stringify({
+        x: position.x,
+        y: position.y,
+      })
+    );
   };
 
   // Function to return to main map
   const returnToMainMap = () => {
     setCurrentTown(null);
-    // Optionally restore character position
+    // Return to a safe position on the main map
+    setPosition({ x: 400, y: 300 });
   };
 
   const handleCheckOut = () => {
@@ -379,10 +482,69 @@ function Game() {
     setNearSign(null); // Clear near sign state when modal is closed
   };
 
+  // Calculate final score
+  const calculateScore = () => {
+    const statsScore =
+      (stats.happiness + stats.hunger + stats.sleep + stats.hygiene) * 2;
+    const goldScore = stats.gold * 5;
+    const dayBonus = gameTime.day * 100;
+    return statsScore + goldScore + dayBonus;
+  };
+
+  // Check for game over condition
+  useEffect(() => {
+    if (
+      stats.happiness <= 0 ||
+      stats.hunger <= 0 ||
+      stats.sleep <= 0 ||
+      stats.hygiene <= 0
+    ) {
+      setShowDeathScreen(true);
+      setFinalScore(calculateScore());
+    }
+  }, [stats]);
+
+  // Function to restart game
+  const restartGame = () => {
+    const initialStats = {
+      happiness: 100,
+      hunger: 100,
+      sleep: 100,
+      hygiene: 100,
+      gold: 0,
+    };
+    setStats(initialStats);
+    localStorage.setItem("gameStats", JSON.stringify(initialStats));
+    setGameTime({
+      hours: 6,
+      minutes: 0,
+      day: 1,
+    });
+    setPosition({ x: 400, y: 300 });
+    setShowDeathScreen(false);
+  };
+
   // Render town component if in a town view
   if (currentTown) {
+    if (currentTown === "home") {
+      return (
+        <div
+          className="town-container"
+          style={{ position: "relative", width: "100%", height: "100vh" }}
+        >
+          <Home
+            onReturn={returnToMainMap}
+            stats={stats}
+            updateStats={updateSpecificStats}
+            work={work}
+            eat={eat}
+            sleep={sleep}
+          />
+        </div>
+      );
+    }
+
     const TownComponent = {
-      home: Home,
       jakarta: Jakarta,
       padang: Padang,
       papua: Papua,
@@ -391,215 +553,309 @@ function Game() {
 
     return (
       <div className="town-container">
-        {/* Town components should ideally handle their own backgrounds and UI */}
-        <TownComponent onReturn={returnToMainMap} />
+        <TownComponent />
       </div>
     );
   }
 
   // Main game render
+  if (showDeathScreen) {
+    return (
+      <div className="death-screen">
+        <div className="death-content">
+          <h1>Game Over</h1>
+          <div className="death-stats">
+            <h2>Final Stats:</h2>
+            <p>Happiness: {stats.happiness}%</p>
+            <p>Hunger: {stats.hunger}%</p>
+            <p>Sleep: {stats.sleep}%</p>
+            <p>Hygiene: {stats.hygiene}%</p>
+            <p>Gold: {stats.gold}</p>
+            <p>Days Survived: {gameTime.day}</p>
+          </div>
+          <div className="final-score">
+            <h2>Final Score: {finalScore}</h2>
+          </div>
+          <button className="restart-button" onClick={restartGame}>
+            Play Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
-      {/* Game Container */}
-      <div
-        className="game-container"
-        ref={gameContainerRef} // Added ref back
-        tabIndex="-1" // Make the div focusable
-      >
-        {/* Character Coordinate Display */}
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            backgroundColor: "rgba(0, 0, 0, 0.6)",
-            color: "white",
-            padding: "10px",
-            borderRadius: "5px",
-            zIndex: 150, // Ensure it's above other elements
-            fontSize: "14px",
-          }}
-        >
-          Coords: ({Math.round(position.x)}, {Math.round(position.y)})
-        </div>
-
-        {/* Character */}
-        <div
-          // className="character" // Removed to prevent external CSS interference
-          style={{
-            position: "absolute", // Keep absolute position
-            left: `${position.x}px`, // Use dynamic position state
-            top: `${position.y}px`, // Use dynamic position state
-            width: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
-            height: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
-            backgroundImage: `url('/Picture/${characterImage}.png')`,
-            backgroundSize: "contain",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            zIndex: 100, // Ensure visibility
-            // backgroundColor: "red", // Removed debugging color
-            // border: "2px solid blue", // Removed debugging border
-          }}
-          onError={(e) => {
-            console.error("Error loading character image:", e);
-          }}
-        ></div>
-
-        {/* Action Bar */}
-        <div className="action-bar">
-          <button className="inventory-button" onClick={toggleInventory}>
-            Inventory
-          </button>
-          {showExploreButton && (
-            <button className="explore-button" onClick={exploreTown}>
-              Explore
-            </button>
-          )}
-          {nearSign && (
-            <button className="check-out-button" onClick={handleCheckOut}>
-              Check out {nearSign.name}
-            </button>
-          )}
-        </div>
-
-        {/* Character Stats */}
-        <div className="character-stats">
-          <h3>{playerName}</h3>
-          <div className="stat-item">
-            <span>Happiness:</span>
-            <div className="stat-bar">
+    <div className="game-container">
+      {currentTown ? (
+        // Render the appropriate town component based on currentTown
+        currentTown === "home" ? (
+          <Home
+            onReturn={() => {
+              setCurrentTown(null);
+              // Restore the previous position
+              const returnPos = JSON.parse(
+                localStorage.getItem("returnPosition") || '{"x": 100, "y": 450}'
+              );
+              setPosition(returnPos);
+            }}
+          />
+        ) : (
+          // Add other town components here as needed
+          <div>Unknown town</div>
+        )
+      ) : (
+        // Main game view
+        <>
+          {/* Game Container */}
+          <div
+            className="game-container"
+            ref={gameContainerRef} // Added ref back
+            tabIndex="-1" // Make the div focusable
+          >
+            {/* Nama player di pojok kiri atas dan ucapan selamat datang */}
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                backgroundColor: "rgba(0,0,0,0.85)",
+                color: "#fff",
+                padding: "6px 12px",
+                borderRadius: "4px",
+                zIndex: 200,
+                fontFamily: `'Press Start 2P', 'Courier New', monospace`,
+                fontWeight: "bold",
+                fontSize: "12px",
+                letterSpacing: "1px",
+                boxShadow: "2px 2px 0 #222",
+                border: "2px solid #333",
+                textShadow: "1px 1px 0 #000",
+                lineHeight: 1.3,
+              }}
+            >
+              {playerName}
               <div
-                className="stat-fill"
-                style={{ width: `${stats.happiness}%` }}
-              ></div>
-            </div>
-            <span>{stats.happiness}%</span>
-          </div>
-          <div className="stat-item">
-            <span>Hunger:</span>
-            <div className="stat-bar">
-              <div
-                className="stat-fill"
-                style={{ width: `${stats.hunger}%` }}
-              ></div>
-            </div>
-            <span>{stats.hunger}%</span>
-          </div>
-          <div className="stat-item">
-            <span>Sleep:</span>
-            <div className="stat-bar">
-              <div
-                className="stat-fill"
-                style={{ width: `${stats.sleep}%` }}
-              ></div>
-            </div>
-            <span>{stats.sleep}%</span>
-          </div>
-          <div className="stat-item">
-            <span>Gold:</span>
-            <span className="gold-amount">{stats.gold}</span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          <button onClick={work}>Work</button>
-          <button onClick={eat}>Eat</button>
-          <button onClick={sleep}>Sleep</button>
-          <button onClick={explore}>Explore</button>
-        </div>
-
-        {/* Sign Details Modal */}
-        {showSignDetails && nearSign && (
-          <div className="sign-details-modal">
-            <div className="sign-details-content">
-              <h2>{nearSign.name}</h2>
-              <p>{nearSign.description}</p>
-              <button className="close-button" onClick={closeSignDetails}>
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Inventory Modal */}
-        {showInventory && (
-          <div className="inventory-modal">
-            <div className="inventory-content">
-              <h2>Inventory</h2>
-              <div className="inventory-items">
-                {inventory.length === 0 ? (
-                  <p>Your inventory is empty</p>
-                ) : (
-                  inventory.map((item, index) => (
-                    <div key={index} className="inventory-item">
-                      <span>{item}</span>
-                      <button onClick={() => removeFromInventory(index)}>
-                        Remove
-                      </button>
-                    </div>
-                  ))
-                )}
+                style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
+              >
+                {getGreeting(gameTime.hours)}, {playerName}!
               </div>
-              <button className="close-inventory" onClick={toggleInventory}>
-                Close
+            </div>
+
+            {/* Time Display */}
+            <div className="time-display-container">
+              <div className="time-display">
+                <span>Day {gameTime.day}</span>
+                <div className="time-text">
+                  {formatTime(gameTime.hours, gameTime.minutes)}
+                </div>
+              </div>
+            </div>
+
+            {/* Character */}
+            <div
+              // className="character" // Removed to prevent external CSS interference
+              style={{
+                position: "absolute", // Keep absolute position
+                left: `${position.x}px`, // Use dynamic position state
+                top: `${position.y}px`, // Use dynamic position state
+                width: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
+                height: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
+                backgroundImage: `url('/Picture/${characterImage}.png')`,
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                zIndex: 100, // Ensure visibility
+                // backgroundColor: "red", // Removed debugging color
+                // border: "2px solid blue", // Removed debugging border
+              }}
+              onError={(e) => {
+                console.error("Error loading character image:", e);
+              }}
+            ></div>
+
+            {/* Action Bar */}
+            <div className="action-bar">
+              <button className="inventory-button" onClick={toggleInventory}>
+                Inventory
+              </button>
+              {nearSign && (
+                <button className="explore-button" onClick={handleCheckOut}>
+                  Check out {nearSign.name}
+                </button>
+              )}
+              {showExploreButton && (
+                <button
+                  className="explore-button"
+                  onClick={() =>
+                    exploreTown(checkNearTown(position.x, position.y))
+                  }
+                >
+                  Explore
+                </button>
+              )}
+            </div>
+
+            {/* Character Stats */}
+            <div className="character-stats">
+              <div className="stat-item">
+                <span>Happiness:</span>
+                <div className="stat-bar happiness-bar">
+                  <div
+                    className="stat-fill"
+                    style={{
+                      width: `${stats.happiness}%`,
+                      imageRendering: "pixelated",
+                      border: "1.5px solid #222",
+                    }}
+                  >
+                    <div className="stat-percentage">{stats.happiness}%</div>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-item">
+                <span>Hunger:</span>
+                <div className="stat-bar hunger-bar">
+                  <div
+                    className="stat-fill"
+                    style={{
+                      width: `${stats.hunger}%`,
+                      imageRendering: "pixelated",
+                      border: "1.5px solid #222",
+                    }}
+                  >
+                    <div className="stat-percentage">{stats.hunger}%</div>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-item">
+                <span>Sleep:</span>
+                <div className="stat-bar sleep-bar">
+                  <div
+                    className="stat-fill"
+                    style={{
+                      width: `${stats.sleep}%`,
+                      imageRendering: "pixelated",
+                      border: "1.5px solid #222",
+                    }}
+                  >
+                    <div className="stat-percentage">{stats.sleep}%</div>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-item">
+                <span>Hygiene:</span>
+                <div className="stat-bar hygiene-bar">
+                  <div
+                    className="stat-fill"
+                    style={{
+                      width: `${stats.hygiene}%`,
+                      imageRendering: "pixelated",
+                      border: "1.5px solid #222",
+                    }}
+                  >
+                    <div className="stat-percentage">{stats.hygiene}%</div>
+                  </div>
+                </div>
+              </div>
+              <div className="stat-item gold-item">
+                <span>Gold:</span>
+                <span className="gold-amount">{stats.gold}</span>
+              </div>
+            </div>
+
+            {/* Sign Details Modal */}
+            {showSignDetails && nearSign && (
+              <div className="sign-details-modal">
+                <div className="sign-details-content">
+                  <h2>{nearSign.name}</h2>
+                  <p>{nearSign.description}</p>
+                  <button className="close-button" onClick={closeSignDetails}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Inventory Modal */}
+            {showInventory && (
+              <div className="inventory-modal">
+                <div className="inventory-content">
+                  <h2>Inventory</h2>
+                  <div className="inventory-items">
+                    {inventory.length === 0 ? (
+                      <p>Your inventory is empty</p>
+                    ) : (
+                      inventory.map((item, index) => (
+                        <div key={index} className="inventory-item">
+                          <span>{item}</span>
+                          <button onClick={() => removeFromInventory(index)}>
+                            Remove
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <button className="close-inventory" onClick={toggleInventory}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Virtual Arrow Keys */}
+            <div className="arrow-keys">
+              <button
+                onMouseDown={() => handleButtonStart("up")}
+                onMouseUp={handleButtonEnd}
+                onMouseLeave={handleButtonEnd}
+                onTouchStart={() => handleButtonStart("up")}
+                onTouchEnd={handleButtonEnd}
+                onTouchCancel={handleButtonEnd}
+                className="arrow-button up"
+              >
+                ▲
+              </button>
+              <div className="left-right">
+                <button
+                  onMouseDown={() => handleButtonStart("left")}
+                  onMouseUp={handleButtonEnd}
+                  onMouseLeave={handleButtonEnd}
+                  onTouchStart={() => handleButtonStart("left")}
+                  onTouchEnd={handleButtonEnd}
+                  onTouchCancel={handleButtonEnd}
+                  className="arrow-button left"
+                >
+                  ◀
+                </button>
+                <button
+                  onMouseDown={() => handleButtonStart("right")}
+                  onMouseUp={handleButtonEnd}
+                  onMouseLeave={handleButtonEnd}
+                  onTouchStart={() => handleButtonStart("right")}
+                  onTouchEnd={handleButtonEnd}
+                  onTouchCancel={handleButtonEnd}
+                  className="arrow-button right"
+                >
+                  ▶
+                </button>
+              </div>
+              <button
+                onMouseDown={() => handleButtonStart("down")}
+                onMouseUp={handleButtonEnd}
+                onMouseLeave={handleButtonEnd}
+                onTouchStart={() => handleButtonStart("down")}
+                onTouchEnd={handleButtonEnd}
+                onTouchCancel={handleButtonEnd}
+                className="arrow-button down"
+              >
+                ▼
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Virtual Arrow Keys */}
-        <div className="arrow-keys">
-          <button
-            onMouseDown={() => handleButtonStart("up")}
-            onMouseUp={handleButtonEnd}
-            onMouseLeave={handleButtonEnd}
-            onTouchStart={() => handleButtonStart("up")}
-            onTouchEnd={handleButtonEnd}
-            onTouchCancel={handleButtonEnd}
-            className="arrow-button up"
-          >
-            ▲
-          </button>
-          <div className="left-right">
-            <button
-              onMouseDown={() => handleButtonStart("left")}
-              onMouseUp={handleButtonEnd}
-              onMouseLeave={handleButtonEnd}
-              onTouchStart={() => handleButtonStart("left")}
-              onTouchEnd={handleButtonEnd}
-              onTouchCancel={handleButtonEnd}
-              className="arrow-button left"
-            >
-              ◀
-            </button>
-            <button
-              onMouseDown={() => handleButtonStart("right")}
-              onMouseUp={handleButtonEnd}
-              onMouseLeave={handleButtonEnd}
-              onTouchStart={() => handleButtonStart("right")}
-              onTouchEnd={handleButtonEnd}
-              onTouchCancel={handleButtonEnd}
-              className="arrow-button right"
-            >
-              ▶
-            </button>
-          </div>
-          <button
-            onMouseDown={() => handleButtonStart("down")}
-            onMouseUp={handleButtonEnd}
-            onMouseLeave={handleButtonEnd}
-            onTouchStart={() => handleButtonStart("down")}
-            onTouchEnd={handleButtonEnd}
-            onTouchCancel={handleButtonEnd}
-            className="arrow-button down"
-          >
-            ▼
-          </button>
-        </div>
-      </div>{" "}
-      {/* End of game-container */}
-    </>
+          </div>{" "}
+          {/* End of game-container */}
+        </>
+      )}
+    </div>
   );
 }
 

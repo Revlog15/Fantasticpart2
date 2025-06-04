@@ -13,7 +13,7 @@ function App() {
           <Route path="/game" element={<Game />} />
         </Routes>
       </div>
-    </BrowserRouter>
+      </BrowserRouter>
   );
 }
 

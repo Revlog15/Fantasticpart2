@@ -553,7 +553,7 @@ function Game() {
 
     return (
       <div className="town-container">
-        <TownComponent />
+        <TownComponent onReturn={returnToMainMap} />
       </div>
     );
   }

@@ -10,6 +10,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  opacity: 0;
+  transform: scale(0.95);
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .town-header {
@@ -19,6 +33,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: slideDown 0.5s ease-out 0.2s forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .town-header h1 {
@@ -48,6 +76,20 @@
   border-radius: 12px;
   flex-grow: 1;
   overflow-y: auto;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUp 0.5s ease-out 0.3s forwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Sign Styles */
@@ -318,4 +360,374 @@
   background-color: #333; /* Darker on active/press */
   box-shadow: inset 2px 2px 0px #000, inset -2px -2px 0px #888,
     1px 1px 2px rgba(0, 0, 0, 0.4); /* Pressed in shadow */
+}
+
+.fade-out {
+  opacity: 0 !important;
+  transform: scale(0.95) !important;
+}
+
+.town-attractions {
+  margin-top: 2rem;
+}
+
+.attraction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.attraction-item {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.attraction-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.attraction-item h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.attraction-item p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.welcome-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+  color: white;
+  padding: 15px 30px;
+  border-radius: 10px;
+  font-size: 24px;
+  z-index: 1000;
+  animation: welcomeMessage 3s ease-in-out forwards;
+  text-align: center;
+  font-family: 'Press Start 2P', 'Courier New', monospace;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes welcomeMessage {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.05);
+  }
+  30% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.9);
+  }
+}
+
+/* Map transition animations */
+@keyframes mapEnter {
+  0% {
+    opacity: 0;
+    transform: scale(1.3) rotate(8deg) translateY(-50px);
+  }
+  30% {
+    opacity: 0.5;
+    transform: scale(1.2) rotate(5deg) translateY(-30px);
+  }
+  60% {
+    transform: scale(1.1) rotate(3deg) translateY(-15px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0) translateY(0);
+  }
+}
+
+@keyframes mapLeave {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0) translateY(0);
+  }
+  30% {
+    transform: scale(0.95) rotate(-2deg) translateY(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(-5deg) translateY(30px);
+  }
+}
+
+.town-map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  animation: mapEnter 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: center center;
+}
+
+.town-map-container.leaving {
+  animation: mapLeave 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.map-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.map-overlay.visible {
+  opacity: 1;
+}
+
+/* Cloud transition effects */
+.clouds-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1500;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s ease-in-out;
+  perspective: 2000px;
+}
+
+.clouds-container.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cloud {
+  position: absolute;
+  width: 400px;
+  height: 180px;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.75) 50%,
+    rgba(255, 255, 255, 0.65) 100%
+  );
+  border-radius: 90px;
+  filter: blur(20px);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.6);
+  will-change: transform;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: inherit;
+  box-shadow: inherit;
+  filter: blur(20px);
+}
+
+.cloud::before {
+  width: 220px;
+  height: 220px;
+  top: -100px;
+  left: 80px;
+  transform: rotate(-8deg);
+}
+
+.cloud::after {
+  width: 260px;
+  height: 260px;
+  top: -120px;
+  right: 80px;
+  transform: rotate(8deg);
+}
+
+/* Additional small clouds for fuller effect */
+.cloud-small {
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  border-radius: 50px;
+  filter: blur(15px);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.cloud-1 {
+  top: 10%;
+  left: -400px;
+  transform-origin: center;
+  animation: moveCloud1 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.cloud-2 {
+  top: 40%;
+  left: -400px;
+  transform-origin: center;
+  animation: moveCloud2 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.4s;
+}
+
+.cloud-3 {
+  top: 70%;
+  left: -400px;
+  transform-origin: center;
+  animation: moveCloud3 4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.8s;
+}
+
+.cloud-small-1 {
+  top: 25%;
+  left: -200px;
+  animation: moveCloudSmall1 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.2s;
+}
+
+.cloud-small-2 {
+  top: 55%;
+  left: -200px;
+  animation: moveCloudSmall2 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation-delay: 0.6s;
+}
+
+@keyframes moveCloud1 {
+  0% {
+    left: -400px;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateZ(150px) rotateY(3deg) translateY(-40px) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateZ(150px) rotateY(-3deg) translateY(40px) scale(1);
+  }
+  100% {
+    left: 100%;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes moveCloud2 {
+  0% {
+    left: -400px;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateZ(200px) rotateY(-5deg) translateY(50px) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateZ(200px) rotateY(5deg) translateY(-50px) scale(1);
+  }
+  100% {
+    left: 100%;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes moveCloud3 {
+  0% {
+    left: -400px;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateZ(250px) rotateY(8deg) translateY(-60px) scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: translateZ(250px) rotateY(-8deg) translateY(60px) scale(1);
+  }
+  100% {
+    left: 100%;
+    transform: translateZ(0) rotateY(0deg) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes moveCloudSmall1 {
+  0% {
+    left: -200px;
+    transform: translateZ(0) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateZ(100px) translateY(-20px) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateZ(100px) translateY(20px) scale(1);
+  }
+  100% {
+    left: 100%;
+    transform: translateZ(0) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+}
+
+@keyframes moveCloudSmall2 {
+  0% {
+    left: -200px;
+    transform: translateZ(0) translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateZ(120px) translateY(30px) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateZ(120px) translateY(-30px) scale(1);
+  }
+  100% {
+    left: 100%;
+    transform: translateZ(0) translateY(0) scale(0.8);
+    opacity: 0;
+  }
 }

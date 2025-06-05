@@ -86,10 +86,10 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
   // Check proximity to action areas
   useEffect(() => {
     const ACTION_RADIUS = 100;
-    const WORK_EAT_COORDS = { x: 40, y: 255 };
-    const SLEEP_COORDS = { x: 865, y: 450 };
-    const HYGIENE_COORDS = { x: 325, y: 465 };
-    const GO_OUTSIDE_COORDS = { x: 1105, y: 180 };
+    const WORK_EAT_COORDS = { x: 85, y: 375 };
+    const SLEEP_COORDS = { x: 1180, y: 615 };
+    const HYGIENE_COORDS = { x: 460, y: 690 };
+    const GO_OUTSIDE_COORDS = { x: 1510, y: 285 };
 
     const distanceToWorkEat = Math.sqrt(
       Math.pow(position.x - WORK_EAT_COORDS.x, 2) +
@@ -139,6 +139,26 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
           zIndex: 100,
         }}
       />
+
+      {/* Coordinate Display */}
+      <div
+        style={{
+          position: "fixed",
+          top: "50px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          backgroundColor: "black",
+          color: "lime",
+          padding: "10px",
+          borderRadius: "5px",
+          fontFamily: "monospace",
+          fontSize: "20px",
+          zIndex: 9999,
+          border: "2px solid lime",
+        }}
+      >
+        X: {Math.round(position.x)} Y: {Math.round(position.y)}
+      </div>
 
       <div className="character-stats">
         <div className="stat-item">

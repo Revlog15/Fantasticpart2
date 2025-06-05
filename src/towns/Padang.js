@@ -7,10 +7,71 @@ function Padang({ onReturn }) {
   const [position, setPosition] = useState({ x: 400, y: 300 });
   const [direction, setDirection] = useState("right");
   const [showClouds, setShowClouds] = useState(true);
+  const [nearNPC, setNearNPC] = useState(null);
   const CHARACTER_SIZE = 150;
 
-  const selectedCharacter = localStorage.getItem("selectedCharacter") || "revlog";
-  const [characterImage, setCharacterImage] = useState(`${selectedCharacter}-idle`);
+  const selectedCharacter =
+    localStorage.getItem("selectedCharacter") || "revlog";
+  const [characterImage, setCharacterImage] = useState(
+    `${selectedCharacter}-idle`
+  );
+
+  // Define NPCs for Padang
+  const npcs = [
+    {
+      id: 1,
+      name: "Anosheep",
+      x: 450,
+      y: 300,
+      image: "npc_anosheep",
+      description: "A friendly sheep who loves to chat about the weather.",
+    },
+    {
+      id: 2,
+      name: "Bebi",
+      x: 800,
+      y: 500,
+      image: "npc_bebi",
+      description: "A mysterious character who knows all the town's secrets.",
+    },
+    {
+      id: 3,
+      name: "Dinozaurus",
+      x: 1200,
+      y: 400,
+      image: "npc_dinozaurus",
+      description:
+        "An ancient dinosaur who loves to tell stories about the past.",
+    },
+    {
+      id: 4,
+      name: "Merdeka",
+      x: 600,
+      y: 600,
+      image: "npc_merdeka",
+      description: "A patriotic character who loves to talk about history.",
+    },
+  ];
+
+  // Check if character is near an NPC
+  const checkNearNPC = (x, y) => {
+    const NPC_DETECTION_RADIUS = 100;
+    for (const npc of npcs) {
+      const distance = Math.sqrt(
+        Math.pow(x - npc.x, 2) + Math.pow(y - npc.y, 2)
+      );
+      if (distance < NPC_DETECTION_RADIUS) {
+        setNearNPC(npc);
+        return;
+      }
+    }
+    setNearNPC(null);
+  };
+
+  // Effect to check proximity to NPCs after movement
+  useEffect(() => {
+    checkNearNPC(position.x, position.y);
+  }, [position]);
 
   const handleReturn = () => {
     setIsLeaving(true);
@@ -109,32 +170,32 @@ function Padang({ onReturn }) {
   }, [position, selectedCharacter]);
 
   return (
-    <div 
-      className={`town`} 
-      style={{ 
+    <div
+      className={`town`}
+      style={{
         position: "fixed",
         top: 0,
         left: 0,
         width: "100vw",
         height: "100vh",
         backgroundColor: "#000",
-        overflow: "hidden"
+        overflow: "hidden",
       }}
     >
       {/* Map with transition effects */}
       <div
-        className={`town-map-container ${isLeaving ? 'leaving' : ''}`}
+        className={`town-map-container ${isLeaving ? "leaving" : ""}`}
         style={{
           backgroundImage: "url('/Picture/mapspadang.jpg')",
           backgroundSize: "100% 100%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          imageRendering: "pixelated"
+          imageRendering: "pixelated",
         }}
       />
 
       {/* Cloud transition effect */}
-      <div className={`clouds-container ${showClouds ? 'visible' : ''}`}>
+      <div className={`clouds-container ${showClouds ? "visible" : ""}`}>
         <div className="cloud cloud-1"></div>
         <div className="cloud cloud-2"></div>
         <div className="cloud cloud-3"></div>
@@ -155,31 +216,69 @@ function Padang({ onReturn }) {
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           zIndex: 100,
-          transition: "left 0.1s, top 0.1s",
-          animation: isLeaving ? 'mapLeave 0.5s ease-in forwards' : 'none'
         }}
       />
 
+      {/* NPCs */}
+      {npcs.map((npc) => (
+        <div
+          key={npc.id}
+          style={{
+            position: "absolute",
+            left: `${npc.x}px`,
+            top: `${npc.y}px`,
+            width: `${CHARACTER_SIZE}px`,
+            height: `${CHARACTER_SIZE}px`,
+            backgroundImage: `url('/Picture/${npc.image}.png')`,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            zIndex: 90,
+          }}
+        />
+      ))}
+
       {/* Temporary Welcome Message */}
       {showWelcome && (
-        <div className="welcome-message">
-          Selamat Datang di Kota Padang
-        </div>
+        <div className="welcome-message">Selamat Datang di Kota Padang</div>
       )}
 
       {/* Return button in corner */}
-      <button 
-        className="return-button" 
+      <button
+        className="return-button"
         onClick={handleReturn}
         style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 1000
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          zIndex: 1000,
         }}
       >
         Return to Map
       </button>
+
+      {/* NPC Interaction Button */}
+      {nearNPC && (
+        <button
+          className="npc-interaction-button"
+          onClick={() => console.log("Talk to", nearNPC.name)}
+          style={{
+            position: "fixed",
+            bottom: "100px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "5px",
+            border: "2px solid #fff",
+            cursor: "pointer",
+          }}
+        >
+          Talk to {nearNPC.name}
+        </button>
+      )}
 
       {/* Virtual Arrow Keys */}
       <div className="arrow-keys">

@@ -218,24 +218,24 @@ function Game() {
   const signs = [
     {
       id: 1,
-      x: 820,
-      y: 186,
+      x: 1120,
+      y: 225,
       name: "Glora Bung Karno",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 220,
-      y: 621,
+      x: 310,
+      y: 795,
       name: "UMN",
       description:
         "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
     },
     {
       id: 3,
-      x: 805,
-      y: 456,
+      x: 1090,
+      y: 600,
       name: "Danau TOBA",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
@@ -245,10 +245,10 @@ function Game() {
   // Define town coordinates
   const towns = {
     home: { x: 130, y: 96, name: "Home" },
-    jakarta: { x: 100, y: 366, name: "Jakarta" },
-    padang: { x: 580, y: 591, name: "Padang" },
-    papua: { x: 1165, y: 591, name: "Papua" },
-    magelang: { x: 1105, y: 141, name: "Magelang" },
+    jakarta: { x: 160, y: 480, name: "Jakarta" },
+    padang: { x: 790, y: 765, name: "Padang" },
+    papua: { x: 1570, y: 765, name: "Papua" },
+    magelang: { x: 1495, y: 210, name: "Magelang" },
   };
 
   // Check if character is near a town
@@ -590,14 +590,12 @@ function Game() {
         // Render the appropriate town component based on currentTown
         currentTown === "home" ? (
           <Home
-            onReturn={() => {
-              setCurrentTown(null);
-              // Restore the previous position
-              const returnPos = JSON.parse(
-                localStorage.getItem("returnPosition") || '{"x": 100, "y": 450}'
-              );
-              setPosition(returnPos);
-            }}
+            onReturn={returnToMainMap}
+            stats={stats}
+            updateStats={updateSpecificStats}
+            work={work}
+            eat={eat}
+            sleep={sleep}
           />
         ) : (
           // Add other town components here as needed
@@ -653,25 +651,19 @@ function Game() {
 
             {/* Character */}
             <div
-              // className="character" // Removed to prevent external CSS interference
               style={{
-                position: "absolute", // Keep absolute position
-                left: `${position.x}px`, // Use dynamic position state
-                top: `${position.y}px`, // Use dynamic position state
-                width: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
-                height: `${CHARACTER_SIZE}px`, // Use dynamic character size constant
+                position: "absolute",
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                width: `${CHARACTER_SIZE}px`,
+                height: `${CHARACTER_SIZE}px`,
                 backgroundImage: `url('/Picture/${characterImage}.png')`,
                 backgroundSize: "contain",
                 backgroundRepeat: "no-repeat",
                 backgroundPosition: "center",
-                zIndex: 100, // Ensure visibility
-                // backgroundColor: "red", // Removed debugging color
-                // border: "2px solid blue", // Removed debugging border
+                zIndex: 100,
               }}
-              onError={(e) => {
-                console.error("Error loading character image:", e);
-              }}
-            ></div>
+            />
 
             {/* Action Bar */}
             <div className="action-bar">

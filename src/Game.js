@@ -10,7 +10,7 @@ import Home from "./towns/Home";
 
 function Game() {
   const CHARACTER_SIZE = 50;
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [position, setPosition] = useState({ x: 50, y: 50 }); // Changed to percentage
   const [direction, setDirection] = useState("right");
   const [moveInterval, setMoveInterval] = useState(null); // State untuk menyimpan interval
   // Add state for stats
@@ -24,46 +24,46 @@ function Game() {
   const [nearSign, setNearSign] = useState(null);
   const [showSignDetails, setShowSignDetails] = useState(false);
 
-  // Define signs for the main map
+  // Define signs for the main map with percentage coordinates
   const signs = [
     {
       id: 1,
-      x: 270,
-      y: 670,
+      x: 27,
+      y: 67,
       name: "Town Hall",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 850,
-      y: 520,
+      x: 85,
+      y: 52,
       name: "Market",
       description:
         "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
     },
     {
       id: 3,
-      x: 870,
-      y: 240,
+      x: 87,
+      y: 24,
       name: "Training Ground",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
     },
   ];
 
-  // Define town coordinates
+  // Define town coordinates with percentage values
   const towns = {
-    home: { x: 800, y: 400, name: "Home" },
-    jakarta: { x: 150, y: 440, name: "Jakarta" },
-    padang: { x: 620, y: 650, name: "Padang" },
-    papua: { x: 1210, y: 650, name: "Papua" },
-    magelang: { x: 1150, y: 230, name: "Magelang" },
+    home: { x: 80, y: 40, name: "Home" },
+    jakarta: { x: 15, y: 44, name: "Jakarta" },
+    padang: { x: 62, y: 65, name: "Padang" },
+    papua: { x: 90, y: 65, name: "Papua" },
+    magelang: { x: 85, y: 23, name: "Magelang" },
   };
 
   // Check if character is near a town
   const checkNearTown = (x, y) => {
-    const TOWN_DETECTION_RADIUS = 50;
+    const TOWN_DETECTION_RADIUS = 5; // Changed to percentage
     for (const [townId, town] of Object.entries(towns)) {
       const distance = Math.sqrt(
         Math.pow(x - town.x, 2) + Math.pow(y - town.y, 2)
@@ -79,7 +79,7 @@ function Game() {
 
   // Check if character is near a sign
   const checkNearSign = (x, y) => {
-    const SIGN_DETECTION_RADIUS = 50;
+    const SIGN_DETECTION_RADIUS = 5; // Changed to percentage
     for (const sign of signs) {
       const distance = Math.sqrt(
         Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
@@ -94,9 +94,7 @@ function Game() {
 
   // Function to handle character movement
   const moveCharacter = (moveDirection) => {
-    const step = 10;
-    const gameWidth = window.innerWidth;
-    const gameHeight = window.innerHeight;
+    const step = 1; // Changed to percentage
     let { x, y } = position;
 
     switch (moveDirection) {
@@ -105,7 +103,7 @@ function Game() {
         setDirection("left");
         break;
       case "right":
-        x = Math.min(x + step, gameWidth - CHARACTER_SIZE);
+        x = Math.min(x + step, 100);
         setDirection("right");
         break;
       case "up":
@@ -113,7 +111,7 @@ function Game() {
         setDirection("up");
         break;
       case "down":
-        y = Math.min(y + step, gameHeight - CHARACTER_SIZE);
+        y = Math.min(y + step, 100);
         setDirection("down");
         break;
       default:
@@ -248,9 +246,7 @@ function Game() {
         backgroundRepeat: "no-repeat",
         width: "100vw",
         height: "100vh",
-        position: "fixed",
-        top: 0,
-        left: 0,
+        position: "relative",
       }}
     >
       {/* Action Bar */}
@@ -317,23 +313,80 @@ function Game() {
         </div>
         <div>Score: {score}</div>
         <div>
-          Position: ({Math.round(position.x)}, {Math.round(position.y)})
+          Position: ({Math.round(position.x)}%, {Math.round(position.y)}%)
         </div>
       </div>
 
       {/* Character */}
       <div
-        className="character"
         style={{
           position: "absolute",
-          left: position.x,
-          top: position.y,
-          width: CHARACTER_SIZE,
-          height: CHARACTER_SIZE,
-          backgroundColor: "red",
-          borderRadius: "50%",
+          left: `${position.x}%`,
+          top: `${position.y}%`,
+          width: `${CHARACTER_SIZE}px`,
+          height: `${CHARACTER_SIZE}px`,
+          backgroundImage: `url('/Picture/${direction}.png')`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center",
+          transform: "translate(-50%, -50%)", // Center the character
+          zIndex: 100,
         }}
       />
+
+      {/* Town Markers */}
+      {Object.entries(towns).map(([townId, town]) => (
+        <div
+          key={townId}
+          style={{
+            position: "absolute",
+            left: `${town.x}%`,
+            top: `${town.y}%`,
+            transform: "translate(-50%, -50%)", // Center the marker
+            width: "40px",
+            height: "40px",
+            backgroundImage: "url('/Picture/town-marker.png')",
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+            zIndex: 90,
+          }}
+        />
+      ))}
+
+      {/* Signs */}
+      {signs.map((sign) => (
+        <div
+          key={sign.id}
+          className="sign"
+          style={{
+            position: "absolute",
+            left: `${sign.x}%`,
+            top: `${sign.y}%`,
+            transform: "translate(-50%, -50%)", // Center the sign
+            zIndex: 90,
+          }}
+        >
+          <div className="sign-icon">ℹ️</div>
+        </div>
+      ))}
+
+      {/* Explore Button */}
+      {showExploreButton && (
+        <button
+          className="explore-button"
+          onClick={exploreTown}
+          style={{
+            position: "absolute",
+            left: `${position.x}%`,
+            top: `${position.y - 10}%`,
+            transform: "translate(-50%, -50%)", // Center the button
+            zIndex: 1000,
+          }}
+        >
+          Explore
+        </button>
+      )}
 
       {/* Virtual Arrow Keys */}
       <div className="arrow-keys">

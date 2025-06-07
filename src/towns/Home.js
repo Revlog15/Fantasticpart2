@@ -7,7 +7,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
     localStorage.getItem("selectedCharacter") || "revlog";
   const playerName = localStorage.getItem("playerName") || "Player";
 
-  const [position, setPosition] = useState({ x: 100, y: 450 });
+  const [position, setPosition] = useState({ x: 10, y: 50 });
   const [characterImage, setCharacterImage] = useState(
     `${selectedCharacter}-idle`
   );
@@ -20,7 +20,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
 
   // Simple movement function
   const moveCharacter = (direction) => {
-    const step = 15;
+    const step = 1;
     let newX = position.x;
     let newY = position.y;
 
@@ -30,7 +30,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
         setCharacterImage(`${selectedCharacter}-left`);
         break;
       case "right":
-        newX = Math.min(position.x + step, window.innerWidth - CHARACTER_SIZE);
+        newX = Math.min(position.x + step, 100);
         setCharacterImage(`${selectedCharacter}-right`);
         break;
       case "up":
@@ -38,7 +38,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
         setCharacterImage(`${selectedCharacter}-left`);
         break;
       case "down":
-        newY = Math.min(position.y + step, window.innerHeight - CHARACTER_SIZE);
+        newY = Math.min(position.y + step, 100);
         setCharacterImage(`${selectedCharacter}-right`);
         break;
       default:
@@ -85,11 +85,11 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
 
   // Check proximity to action areas
   useEffect(() => {
-    const ACTION_RADIUS = 100;
-    const WORK_EAT_COORDS = { x: 85, y: 375 };
-    const SLEEP_COORDS = { x: 1180, y: 615 };
-    const HYGIENE_COORDS = { x: 460, y: 690 };
-    const GO_OUTSIDE_COORDS = { x: 1510, y: 285 };
+    const ACTION_RADIUS = 15;
+    const WORK_EAT_COORDS = { x: 10, y: 40 };
+    const SLEEP_COORDS = { x: 80, y: 70 };
+    const HYGIENE_COORDS = { x: 30, y: 80 };
+    const GO_OUTSIDE_COORDS = { x: 90, y: 30 };
 
     const distanceToWorkEat = Math.sqrt(
       Math.pow(position.x - WORK_EAT_COORDS.x, 2) +
@@ -128,8 +128,8 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
       <div
         style={{
           position: "absolute",
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          left: `${position.x}%`,
+          top: `${position.y}%`,
           width: `${CHARACTER_SIZE}px`,
           height: `${CHARACTER_SIZE}px`,
           backgroundImage: `url('/Picture/${characterImage}.png')`,
@@ -137,12 +137,13 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
           zIndex: 100,
+          transform: "translate(-50%, -50%)",
         }}
       />
 
       {/* Coordinate Display */}
       <div className="coordinates-display">
-        X: {Math.round(position.x)} Y: {Math.round(position.y)}
+        X: {Math.round(position.x)}% Y: {Math.round(position.y)}%
       </div>
 
       <div className="character-stats">
@@ -207,7 +208,9 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
 
       {showHygieneButton && (
         <div className="action-buttons">
-          <button onClick={() => updateStats({ hygiene: 100 })}>Clean Up</button>
+          <button onClick={() => updateStats({ hygiene: 100 })}>
+            Clean Up
+          </button>
         </div>
       )}
 

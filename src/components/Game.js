@@ -218,24 +218,24 @@ function Game() {
   const signs = [
     {
       id: 1,
-      x: 1120,
-      y: 225,
+      x: 820,
+      y: 180,
       name: "Glora Bung Karno",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 310,
-      y: 795,
+      x: 200,
+      y: 600,
       name: "UMN",
       description:
         "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
     },
     {
       id: 3,
-      x: 1090,
-      y: 600,
+      x: 805,
+      y: 450,
       name: "Danau TOBA",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
@@ -245,10 +245,10 @@ function Game() {
   // Define town coordinates
   const towns = {
     home: { x: 130, y: 96, name: "Home" },
-    jakarta: { x: 160, y: 480, name: "Jakarta" },
+    jakarta: { x: 100, y: 360, name: "Jakarta" },
     padang: { x: 610, y: 520, name: "Padang" },
     papua: { x: 1570, y: 765, name: "Papua" },
-    magelang: { x: 1495, y: 210, name: "Magelang" },
+    magelang: { x: 1105, y: 150, name: "Magelang" },
   };
 
   // Check if character is near a town
@@ -553,7 +553,11 @@ function Game() {
 
     return (
       <div className="town-container">
-        <TownComponent onReturn={returnToMainMap} />
+        <TownComponent
+          onReturn={returnToMainMap}
+          stats={stats}
+          updateStats={updateSpecificStats}
+        />
       </div>
     );
   }
@@ -599,14 +603,20 @@ function Game() {
         // Town components rendering
         <>
           {currentTown === "jakarta" && (
-            <Jakarta onReturn={returnToMainMap} stats={stats} updateStats={updateStats} />
+            <Jakarta
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
+            />
           )}
           {currentTown === "padang" && (
-            <Padang onReturn={returnToMainMap} />
+            <Padang
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
+            />
           )}
-          {currentTown === "papua" && (
-            <Papua onReturn={returnToMainMap} />
-          )}
+          {currentTown === "papua" && <Papua onReturn={returnToMainMap} />}
           {currentTown === "magelang" && (
             <Magelang onReturn={returnToMainMap} />
           )}
@@ -614,7 +624,7 @@ function Game() {
             <Home
               onReturn={returnToMainMap}
               stats={stats}
-              updateStats={updateStats}
+              updateStats={updateSpecificStats}
               work={work}
               eat={eat}
               sleep={sleep}
@@ -765,7 +775,9 @@ function Game() {
             {showExploreButton && (
               <button
                 className="explore-button"
-                onClick={() => exploreTown(checkNearTown(position.x, position.y))}
+                onClick={() =>
+                  exploreTown(checkNearTown(position.x, position.y))
+                }
               >
                 Explore
               </button>

@@ -1,7 +1,9 @@
 .game-container {
-  position: relative;
-  width: 100%; /* Adjust as needed */
-  height: 100vh; /* Full viewport height */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background-image: url("../../public/Picture/map-utama.jpg"); /* Main map background */
   background-size: cover;
   background-position: center;
@@ -1025,4 +1027,21 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.coordinates-display {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #00ff00;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  border: 2px solid #00ff00;
+  z-index: 1000;
+  text-shadow: 0 0 5px #00ff00;
+  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
 }

@@ -246,7 +246,7 @@ function Game() {
   const towns = {
     home: { x: 130, y: 96, name: "Home" },
     jakarta: { x: 160, y: 480, name: "Jakarta" },
-    padang: { x: 790, y: 765, name: "Padang" },
+    padang: { x: 610, y: 520, name: "Padang" },
     papua: { x: 1570, y: 765, name: "Papua" },
     magelang: { x: 1495, y: 210, name: "Magelang" },
   };
@@ -585,266 +585,238 @@ function Game() {
   }
 
   return (
-    <div className="game-container">
+    <div
+      ref={gameContainerRef}
+      className="game-container"
+      tabIndex={0}
+      style={{
+        backgroundImage: `url('/Picture/map-utama.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       {currentTown ? (
-        // Render the appropriate town component based on currentTown
-        currentTown === "home" ? (
-          <Home
-            onReturn={returnToMainMap}
-            stats={stats}
-            updateStats={updateSpecificStats}
-            work={work}
-            eat={eat}
-            sleep={sleep}
-          />
-        ) : (
-          // Add other town components here as needed
-          <div>Unknown town</div>
-        )
-      ) : (
-        // Main game view
+        // Town components rendering
         <>
-          {/* Game Container */}
-          <div
-            className="game-container"
-            ref={gameContainerRef} // Added ref back
-            tabIndex="-1" // Make the div focusable
-          >
-            {/* Nama player di pojok kiri atas dan ucapan selamat datang */}
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                backgroundColor: "rgba(0,0,0,0.85)",
-                color: "#fff",
-                padding: "6px 12px",
-                borderRadius: "4px",
-                zIndex: 200,
-                fontFamily: `'Press Start 2P', 'Courier New', monospace`,
-                fontWeight: "bold",
-                fontSize: "12px",
-                letterSpacing: "1px",
-                boxShadow: "2px 2px 0 #222",
-                border: "2px solid #333",
-                textShadow: "1px 1px 0 #000",
-                lineHeight: 1.3,
-              }}
-            >
-              {playerName}
-              <div
-                style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
-              >
-                {getGreeting(gameTime.hours)}, {playerName}!
-              </div>
-            </div>
-
-            {/* Time Display */}
-            <div className="time-display-container">
-              <div className="time-display">
-                <span>Day {gameTime.day}</span>
-                <div className="time-text">
-                  {formatTime(gameTime.hours, gameTime.minutes)}
-                </div>
-              </div>
-            </div>
-
-            {/* Character */}
-            <div
-              style={{
-                position: "absolute",
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-                width: `${CHARACTER_SIZE}px`,
-                height: `${CHARACTER_SIZE}px`,
-                backgroundImage: `url('/Picture/${characterImage}.png')`,
-                backgroundSize: "contain",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center",
-                zIndex: 100,
-              }}
+          {currentTown === "jakarta" && (
+            <Jakarta onReturn={returnToMainMap} stats={stats} updateStats={updateStats} />
+          )}
+          {currentTown === "padang" && (
+            <Padang onReturn={returnToMainMap} />
+          )}
+          {currentTown === "papua" && (
+            <Papua onReturn={returnToMainMap} />
+          )}
+          {currentTown === "magelang" && (
+            <Magelang onReturn={returnToMainMap} />
+          )}
+          {currentTown === "home" && (
+            <Home
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateStats}
+              work={work}
+              eat={eat}
+              sleep={sleep}
             />
+          )}
+        </>
+      ) : (
+        // Main map rendering
+        <>
+          {/* Player Name and Welcome Message */}
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              backgroundColor: "rgba(0,0,0,0.85)",
+              color: "#fff",
+              padding: "6px 12px",
+              borderRadius: "4px",
+              zIndex: 200,
+              fontFamily: `'Press Start 2P', 'Courier New', monospace`,
+              fontWeight: "bold",
+              fontSize: "12px",
+              letterSpacing: "1px",
+              boxShadow: "2px 2px 0 #222",
+              border: "2px solid #333",
+              textShadow: "1px 1px 0 #000",
+              lineHeight: 1.3,
+            }}
+          >
+            {playerName}
+            <div
+              style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
+            >
+              {getGreeting(gameTime.hours)}, {playerName}!
+            </div>
+          </div>
 
-            {/* Action Bar */}
-            <div className="action-bar">
-              <button className="inventory-button" onClick={toggleInventory}>
-                Inventory
-              </button>
-              {nearSign && (
-                <button className="explore-button" onClick={handleCheckOut}>
-                  Check out {nearSign.name}
-                </button>
-              )}
-              {showExploreButton && (
-                <button
-                  className="explore-button"
-                  onClick={() =>
-                    exploreTown(checkNearTown(position.x, position.y))
-                  }
+          {/* Time Display */}
+          <div className="time-display-container">
+            <div className="time-display">
+              <span>Day {gameTime.day}</span>
+              <div className="time-text">
+                {formatTime(gameTime.hours, gameTime.minutes)}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats display */}
+          <div className="character-stats">
+            <div className="stat-item">
+              <span>Happiness:</span>
+              <div className="stat-bar happiness-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.happiness}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
                 >
-                  Explore
-                </button>
-              )}
-            </div>
-
-            {/* Character Stats */}
-            <div className="character-stats">
-              <div className="stat-item">
-                <span>Happiness:</span>
-                <div className="stat-bar happiness-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.happiness}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.happiness}%</div>
-                  </div>
+                  <div className="stat-percentage">{stats.happiness}%</div>
                 </div>
-              </div>
-              <div className="stat-item">
-                <span>Hunger:</span>
-                <div className="stat-bar hunger-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.hunger}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.hunger}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item">
-                <span>Sleep:</span>
-                <div className="stat-bar sleep-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.sleep}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.sleep}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item">
-                <span>Hygiene:</span>
-                <div className="stat-bar hygiene-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.hygiene}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.hygiene}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item gold-item">
-                <span>Gold:</span>
-                <span className="gold-amount">{stats.gold}</span>
               </div>
             </div>
-
-            {/* Sign Details Modal */}
-            {showSignDetails && nearSign && (
-              <div className="sign-details-modal">
-                <div className="sign-details-content">
-                  <h2>{nearSign.name}</h2>
-                  <p>{nearSign.description}</p>
-                  <button className="close-button" onClick={closeSignDetails}>
-                    Close
-                  </button>
+            <div className="stat-item">
+              <span>Hunger:</span>
+              <div className="stat-bar hunger-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.hunger}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.hunger}%</div>
                 </div>
               </div>
-            )}
-
-            {/* Inventory Modal */}
-            {showInventory && (
-              <div className="inventory-modal">
-                <div className="inventory-content">
-                  <h2>Inventory</h2>
-                  <div className="inventory-items">
-                    {inventory.length === 0 ? (
-                      <p>Your inventory is empty</p>
-                    ) : (
-                      inventory.map((item, index) => (
-                        <div key={index} className="inventory-item">
-                          <span>{item}</span>
-                          <button onClick={() => removeFromInventory(index)}>
-                            Remove
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <button className="close-inventory" onClick={toggleInventory}>
-                    Close
-                  </button>
+            </div>
+            <div className="stat-item">
+              <span>Sleep:</span>
+              <div className="stat-bar sleep-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.sleep}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.sleep}%</div>
                 </div>
               </div>
-            )}
+            </div>
+            <div className="stat-item">
+              <span>Hygiene:</span>
+              <div className="stat-bar hygiene-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.hygiene}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.hygiene}%</div>
+                </div>
+              </div>
+            </div>
+            <div className="stat-item gold-item">
+              <span>Gold:</span>
+              <span className="gold-amount">{stats.gold}</span>
+            </div>
+          </div>
 
-            {/* Virtual Arrow Keys */}
-            <div className="arrow-keys">
+          {/* Character */}
+          <div
+            style={{
+              position: "absolute",
+              left: `${position.x}px`,
+              top: `${position.y}px`,
+              width: `${CHARACTER_SIZE}px`,
+              height: `${CHARACTER_SIZE}px`,
+              backgroundImage: `url('/Picture/${characterImage}.png')`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              zIndex: 100,
+            }}
+          />
+
+          {/* Coordinates Display */}
+          <div className="coordinates-display">
+            X: {Math.round(position.x)} Y: {Math.round(position.y)}
+          </div>
+
+          {/* Action Bar */}
+          <div className="action-bar">
+            <button className="inventory-button" onClick={toggleInventory}>
+              Inventory
+            </button>
+            {nearSign && (
+              <button className="explore-button" onClick={handleCheckOut}>
+                Check out {nearSign.name}
+              </button>
+            )}
+            {showExploreButton && (
               <button
-                onMouseDown={() => handleButtonStart("up")}
+                className="explore-button"
+                onClick={() => exploreTown(checkNearTown(position.x, position.y))}
+              >
+                Explore
+              </button>
+            )}
+          </div>
+
+          {/* Virtual Controls */}
+          <div className="arrow-keys">
+            <button
+              className="arrow-button"
+              onMouseDown={() => handleButtonStart("up")}
+              onMouseUp={handleButtonEnd}
+              onMouseLeave={handleButtonEnd}
+              onTouchStart={() => handleButtonStart("up")}
+              onTouchEnd={handleButtonEnd}
+            >
+              ↑
+            </button>
+            <div className="left-right">
+              <button
+                className="arrow-button"
+                onMouseDown={() => handleButtonStart("left")}
                 onMouseUp={handleButtonEnd}
                 onMouseLeave={handleButtonEnd}
-                onTouchStart={() => handleButtonStart("up")}
+                onTouchStart={() => handleButtonStart("left")}
                 onTouchEnd={handleButtonEnd}
-                onTouchCancel={handleButtonEnd}
-                className="arrow-button up"
               >
-                ▲
+                ←
               </button>
-              <div className="left-right">
-                <button
-                  onMouseDown={() => handleButtonStart("left")}
-                  onMouseUp={handleButtonEnd}
-                  onMouseLeave={handleButtonEnd}
-                  onTouchStart={() => handleButtonStart("left")}
-                  onTouchEnd={handleButtonEnd}
-                  onTouchCancel={handleButtonEnd}
-                  className="arrow-button left"
-                >
-                  ◀
-                </button>
-                <button
-                  onMouseDown={() => handleButtonStart("right")}
-                  onMouseUp={handleButtonEnd}
-                  onMouseLeave={handleButtonEnd}
-                  onTouchStart={() => handleButtonStart("right")}
-                  onTouchEnd={handleButtonEnd}
-                  onTouchCancel={handleButtonEnd}
-                  className="arrow-button right"
-                >
-                  ▶
-                </button>
-              </div>
               <button
+                className="arrow-button"
                 onMouseDown={() => handleButtonStart("down")}
                 onMouseUp={handleButtonEnd}
                 onMouseLeave={handleButtonEnd}
                 onTouchStart={() => handleButtonStart("down")}
                 onTouchEnd={handleButtonEnd}
-                onTouchCancel={handleButtonEnd}
-                className="arrow-button down"
               >
-                ▼
+                ↓
+              </button>
+              <button
+                className="arrow-button"
+                onMouseDown={() => handleButtonStart("right")}
+                onMouseUp={handleButtonEnd}
+                onMouseLeave={handleButtonEnd}
+                onTouchStart={() => handleButtonStart("right")}
+                onTouchEnd={handleButtonEnd}
+              >
+                →
               </button>
             </div>
-          </div>{" "}
-          {/* End of game-container */}
+          </div>
         </>
       )}
     </div>

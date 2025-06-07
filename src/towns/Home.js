@@ -141,22 +141,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
       />
 
       {/* Coordinate Display */}
-      <div
-        style={{
-          position: "fixed",
-          top: "50px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundColor: "black",
-          color: "lime",
-          padding: "10px",
-          borderRadius: "5px",
-          fontFamily: "monospace",
-          fontSize: "20px",
-          zIndex: 9999,
-          border: "2px solid lime",
-        }}
-      >
+      <div className="coordinates-display">
         X: {Math.round(position.x)} Y: {Math.round(position.y)}
       </div>
 
@@ -207,72 +192,28 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
         </div>
       </div>
 
-      <div className="action-buttons">
-        <button
-          className="inventory-button"
-          onClick={() => setShowInventory(!showInventory)}
-        >
-          Inventory
-        </button>
-        {showWorkEatButtons && (
-          <>
-            <button className="action-button" onClick={work}>
-              Work
-            </button>
-            <button className="action-button" onClick={eat}>
-              Eat
-            </button>
-          </>
-        )}
-        {showSleepButton && (
-          <button className="action-button" onClick={sleep}>
-            Sleep
-          </button>
-        )}
-        {showHygieneButton && (
-          <button
-            className="action-button"
-            onClick={() => updateStats({ hygiene: 100 })}
-          >
-            Shower
-          </button>
-        )}
-        {showGoOutsideButton && (
-          <button className="action-button" onClick={onReturn}>
-            Go outside
-          </button>
-        )}
-      </div>
+      {showWorkEatButtons && (
+        <div className="action-buttons">
+          <button onClick={work}>Work</button>
+          <button onClick={eat}>Eat</button>
+        </div>
+      )}
 
-      {showInventory && (
-        <div className="inventory-modal">
-          <div className="inventory-content">
-            <h2>Inventory</h2>
-            <div className="inventory-items">
-              {inventory.length === 0 ? (
-                <p>Your inventory is empty</p>
-              ) : (
-                inventory.map((item, index) => (
-                  <div key={index} className="inventory-item">
-                    <span>{item}</span>
-                    <button
-                      onClick={() =>
-                        setInventory(inventory.filter((_, i) => i !== index))
-                      }
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-            <button
-              className="close-inventory"
-              onClick={() => setShowInventory(false)}
-            >
-              Close
-            </button>
-          </div>
+      {showSleepButton && (
+        <div className="action-buttons">
+          <button onClick={sleep}>Sleep</button>
+        </div>
+      )}
+
+      {showHygieneButton && (
+        <div className="action-buttons">
+          <button onClick={() => updateStats({ hygiene: 100 })}>Clean Up</button>
+        </div>
+      )}
+
+      {showGoOutsideButton && (
+        <div className="action-buttons">
+          <button onClick={onReturn}>Go Outside</button>
         </div>
       )}
 

@@ -19,7 +19,7 @@ function Game() {
 
   console.log("Selected Character:", selectedCharacter); // Debug log
 
-  const [position, setPosition] = useState({ x: 400, y: 300 }); // Start near center for better visibility initially
+  const [position, setPosition] = useState({ x: 50, y: 50 });
   const [direction, setDirection] = useState("right");
   const [characterImage, setCharacterImage] = useState(
     `${selectedCharacter}-idle`
@@ -58,7 +58,6 @@ function Game() {
   const [showSignDetails, setShowSignDetails] = useState(false);
   const [showDeathScreen, setShowDeathScreen] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
-  const [showGlobalInventory, setShowGlobalInventory] = useState(false);
 
   console.log("Initial Character Image:", `${selectedCharacter}-idle`); // Debug log
   console.log("Full Image Path:", `/Picture/${selectedCharacter}-idle.png`); // Debug log
@@ -155,6 +154,11 @@ function Game() {
     return () => clearInterval(statDecayInterval);
   }, []);
 
+  // Update stats with limits whenever they change
+  useEffect(() => {
+    updateStats();
+  }, [stats]);
+
   // Effect to keep positionRef updated with the latest position state
   useEffect(() => {
     positionRef.current = position;
@@ -210,46 +214,46 @@ function Game() {
     }
   };
 
-  // Define signs for the main map
+  // Define signs for the main map (now using percentage coordinates)
   const signs = [
     {
       id: 1,
-      x: 880,
-      y: 138,
-      name: "Glora Bung Karno",
+      x: 20,
+      y: 88,
+      name: "Town Hall",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 235,
-      y: 588,
-      name: "UMN",
+      x: 61,
+      y: 68,
+      name: "Market",
       description:
         "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
     },
     {
       id: 3,
-      x: 865,
-      y: 453,
-      name: "Danau TOBA",
+      x: 62,
+      y: 31,
+      name: "Training Ground",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
     },
   ];
 
-  // Define town coordinates
+  // Define town coordinates with percentage values
   const towns = {
-    home: { x: 130, y: 96, name: "Home" },
-    jakarta: { x: 100, y: 330, name: "Jakarta" },
-    padang: { x: 625, y: 558, name: "Padang" },
-    papua: { x: 1240, y: 558, name: "Papua" },
-    magelang: { x: 1180, y: 108, name: "Magelang" },
+    home: { x: 14, y: 21, name: "Home" },
+    jakarta: { x: 12, y: 57, name: "Jakarta" },
+    padang: { x: 45, y: 84, name: "Padang" },
+    papua: { x: 86, y: 86, name: "Papua" },
+    magelang: { x: 81, y: 28, name: "Magelang" },
   };
 
   // Check if character is near a town
   const checkNearTown = (x, y) => {
-    const TOWN_DETECTION_RADIUS = 100; // Increased detection radius
+    const TOWN_DETECTION_RADIUS = 5; // Changed to percentage
     for (const [townId, town] of Object.entries(towns)) {
       const distance = Math.sqrt(
         Math.pow(x - town.x, 2) + Math.pow(y - town.y, 2)
@@ -265,22 +269,16 @@ function Game() {
 
   // Check if character is near a sign
   const checkNearSign = (x, y) => {
-    const SIGN_DETECTION_RADIUS = 80; // Increased detection radius
-    console.log("Checking signs at position:", x, y); // Debug log
-
+    const SIGN_DETECTION_RADIUS = 5; // Changed to percentage
     for (const sign of signs) {
       const distance = Math.sqrt(
         Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
       );
-      console.log(`Distance to ${sign.name}:`, distance); // Debug log
-
       if (distance < SIGN_DETECTION_RADIUS) {
-        console.log("Near sign:", sign.name); // Debug log
         setNearSign(sign);
         return;
       }
     }
-    console.log("Not near any sign"); // Debug log
     setNearSign(null);
   };
 
@@ -298,47 +296,41 @@ function Game() {
 
   // Function to handle character movement
   const moveCharacter = (moveDirection) => {
-    console.log("moveCharacter called with direction:", moveDirection); // Log moveCharacter call
-    const step = 15; // Increased step for faster movement
-    const gameContainer = gameContainerRef.current;
-    if (!gameContainer) return; // Ensure ref is available
-
-    const containerRect = gameContainer.getBoundingClientRect();
-    // Assuming map size is larger than the window and scrolls, need actual map dimensions or use window for limits
-    const gameWidth = window.innerWidth; // Fallback to window if map dimensions not available
-    const gameHeight = window.innerHeight; // Fallback to window if map dimensions not available
-
-    let { x, y } = positionRef.current; // Use positionRef.current here
-
-    switch (moveDirection) {
-      case "left":
-        x = Math.max(x - step, 0);
-        setDirection("left");
-        setCharacterImage(getImageName("left"));
-        break;
-      case "right":
-        x = Math.min(x + step, gameWidth - CHARACTER_SIZE);
-        setDirection("right");
-        setCharacterImage(getImageName("right"));
-        break;
-      case "up":
-        y = Math.max(y - step, 0);
-        setDirection("up");
-        // Use left-facing image for up movement (common in 2D games)
-        setCharacterImage(getImageName("left"));
-        break;
-      case "down":
-        y = Math.min(y + step, gameHeight - CHARACTER_SIZE);
-        setDirection("down");
-        // Use right-facing image for down movement (common in 2D games)
-        setCharacterImage(getImageName("right"));
-        break;
-      default:
-        return;
-    }
-    console.log("New position:", { x, y }); // Log new calculated position
-    setPosition({ x, y });
-    console.log("State position updated to:", { x, y }); // Log position state update
+    setPosition((prev) => {
+      let { x, y } = prev;
+      const step = 1;
+      let newDirection = direction;
+      let newImage = characterImage;
+      switch (moveDirection) {
+        case "left":
+          x = Math.max(x - step, 0);
+          newDirection = "left";
+          newImage = getImageName("left");
+          break;
+        case "right":
+          x = Math.min(x + step, 100);
+          newDirection = "right";
+          newImage = getImageName("right");
+          break;
+        case "up":
+          y = Math.max(y - step, 0);
+          newDirection = "up";
+          newImage = getImageName("left");
+          break;
+        case "down":
+          y = Math.min(y + step, 100);
+          newDirection = "down";
+          newImage = getImageName("right");
+          break;
+        default:
+          return prev;
+      }
+      setDirection(newDirection);
+      setCharacterImage(newImage);
+      checkNearTown(x, y);
+      checkNearSign(x, y);
+      return { x, y };
+    });
   };
 
   // Effect to check proximity to towns and signs after movement
@@ -464,7 +456,7 @@ function Game() {
   const returnToMainMap = () => {
     setCurrentTown(null);
     // Return to a safe position on the main map
-    setPosition({ x: 400, y: 300 });
+    setPosition({ x: 50, y: 50 });
   };
 
   const handleCheckOut = () => {
@@ -502,7 +494,6 @@ function Game() {
 
   // Function to restart game
   const restartGame = () => {
-    // Reset global stats
     const initialStats = {
       happiness: 100,
       hunger: 100,
@@ -517,64 +508,9 @@ function Game() {
       minutes: 0,
       day: 1,
     });
-    setPosition({ x: 400, y: 300 });
+    setPosition({ x: 50, y: 50 });
     setShowDeathScreen(false);
-
-    // Hapus progress, inventory, dan stats dari semua map
-    localStorage.removeItem('jakartaInventory');
-    localStorage.removeItem('jakartaProgress');
-    localStorage.removeItem('jakartaStats');
-    localStorage.removeItem('padangInventory');
-    localStorage.removeItem('padangProgress');
-    localStorage.removeItem('padangStats');
-    localStorage.removeItem('papuaInventory');
-    localStorage.removeItem('papuaProgress');
-    localStorage.removeItem('papuaStats');
-    localStorage.removeItem('magelangInventory');
-    localStorage.removeItem('magelangProgress');
-    localStorage.removeItem('magelangStats');
   };
-
-  // Semua useEffect di sini!
-  useEffect(() => {
-    function reloadStats() {
-      const savedStats = localStorage.getItem("gameStats");
-      if (savedStats) setStats(JSON.parse(savedStats));
-    }
-    window.addEventListener("focus", reloadStats);
-    return () => window.removeEventListener("focus", reloadStats);
-  }, []);
-
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Hapus progress, inventory, dan stats dari semua map
-      localStorage.removeItem('jakartaInventory');
-      localStorage.removeItem('jakartaProgress');
-      localStorage.removeItem('jakartaStats');
-      localStorage.removeItem('padangInventory');
-      localStorage.removeItem('padangProgress');
-      localStorage.removeItem('padangStats');
-      localStorage.removeItem('papuaInventory');
-      localStorage.removeItem('papuaProgress');
-      localStorage.removeItem('papuaStats');
-      localStorage.removeItem('magelangInventory');
-      localStorage.removeItem('magelangProgress');
-      localStorage.removeItem('magelangStats');
-      localStorage.removeItem('gameStats');
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const savedStats = localStorage.getItem("gameStats");
-      if (savedStats) setStats(JSON.parse(savedStats));
-    }, 200); // 0.2 detik
-    return () => clearInterval(interval);
-  }, []);
-
-  // Setelah semua useEffect, baru boleh ada if (currentTown) { ... } atau if (showDeathScreen) { ... }
 
   // Render town component if in a town view
   if (currentTown) {
@@ -605,7 +541,11 @@ function Game() {
 
     return (
       <div className="town-container">
-        <TownComponent onReturn={returnToMainMap} stats={stats} updateStats={updateSpecificStats} gameTime={gameTime} formatTime={formatTime} getGreeting={getGreeting} closeSignDetails={closeSignDetails} />
+        <TownComponent
+          onReturn={returnToMainMap}
+          stats={stats}
+          updateStats={updateSpecificStats}
+        />
       </div>
     );
   }
@@ -637,304 +577,257 @@ function Game() {
   }
 
   return (
-    <div className="game-container">
+    <div
+      ref={gameContainerRef}
+      className="game-container"
+      tabIndex={0}
+      style={{
+        backgroundImage: `url('/Picture/map-utama.jpg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        width: "100vw",
+        height: "100vh",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
       {currentTown ? (
-        // Render the appropriate town component based on currentTown
-        currentTown === "home" ? (
-          <Home
-            onReturn={returnToMainMap}
-            stats={stats}
-            updateStats={updateSpecificStats}
-            work={work}
-            eat={eat}
-            sleep={sleep}
-          />
-        ) : (
-          // Add other town components here as needed
-          <div>Unknown town</div>
-        )
-      ) : (
-        // Main game view
+        // Town components rendering
         <>
-          {/* Game Container */}
-          <div
-            className="game-container"
-            ref={gameContainerRef} // Added ref back
-            tabIndex="-1" // Make the div focusable
-          >
-            {/* Nama player di pojok kiri atas dan ucapan selamat datang */}
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                backgroundColor: "rgba(0,0,0,0.85)",
-                color: "#fff",
-                padding: "6px 12px",
-                borderRadius: "4px",
-                zIndex: 200,
-                fontFamily: `'Press Start 2P', 'Courier New', monospace`,
-                fontWeight: "bold",
-                fontSize: "12px",
-                letterSpacing: "1px",
-                boxShadow: "2px 2px 0 #222",
-                border: "2px solid #333",
-                textShadow: "1px 1px 0 #000",
-                lineHeight: 1.3,
-              }}
-            >
-              {playerName}
-              <div
-                style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
-              >
-                {getGreeting(gameTime.hours)}, {playerName}!
-              </div>
-            </div>
-
-            {/* Time Display */}
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                right: 16,
-                backgroundColor: "rgba(0,0,0,0.85)",
-                color: "#fff",
-                padding: "6px 12px",
-                borderRadius: "4px",
-                zIndex: 200,
-                fontFamily: `'Press Start 2P', 'Courier New', monospace`,
-                fontWeight: "bold",
-                fontSize: "12px",
-                letterSpacing: "1px",
-                boxShadow: "2px 2px 0 #222",
-                border: "2px solid #333",
-                textShadow: "1px 1px 0 #000",
-                lineHeight: 1.3,
-              }}
-            >
-              {formatTime(gameTime.hours, gameTime.minutes)}
-              <div
-                style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
-              >
-                Day {gameTime.day}
-              </div>
-            </div>
-
-            {/* Coordinate Display */}
-            <div
-              style={{
-                position: "fixed",
-                top: "50px",
-                left: "50%",
-                transform: "translateX(-50%)",
-                backgroundColor: "black",
-                color: "lime",
-                padding: "10px",
-                borderRadius: "5px",
-                fontFamily: "monospace",
-                fontSize: "20px",
-                zIndex: 9999,
-                border: "2px solid lime",
-              }}
-            >
-              X: {Math.round(position.x)} Y: {Math.round(position.y)}
-            </div>
-
-            {/* Character */}
-            <div
-              style={{
-                position: "absolute",
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-                width: `${CHARACTER_SIZE}px`,
-                height: `${CHARACTER_SIZE}px`,
-                backgroundImage: `url('/Picture/${characterImage}.png')`,
-                backgroundSize: "contain",
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center",
-                zIndex: 100,
-              }}
+          {currentTown === "jakarta" && (
+            <Jakarta
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
             />
+          )}
+          {currentTown === "padang" && (
+            <Padang
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
+            />
+          )}
+          {currentTown === "papua" && (
+            <Papua
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
+            />
+          )}
+          {currentTown === "magelang" && (
+            <Magelang onReturn={returnToMainMap} />
+          )}
+          {currentTown === "home" && (
+            <Home
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateSpecificStats}
+              work={work}
+              eat={eat}
+              sleep={sleep}
+            />
+          )}
+        </>
+      ) : (
+        // Main map rendering
+        <>
+          {/* Player Name and Welcome Message */}
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              backgroundColor: "rgba(0,0,0,0.85)",
+              color: "#fff",
+              padding: "6px 12px",
+              borderRadius: "4px",
+              zIndex: 200,
+              fontFamily: `'Press Start 2P', 'Courier New', monospace`,
+              fontWeight: "bold",
+              fontSize: "12px",
+              letterSpacing: "1px",
+              boxShadow: "2px 2px 0 #222",
+              border: "2px solid #333",
+              textShadow: "1px 1px 0 #000",
+              lineHeight: 1.3,
+            }}
+          >
+            {playerName}
+            <div
+              style={{ fontWeight: "normal", fontSize: "10px", marginTop: 2 }}
+            >
+              {getGreeting(gameTime.hours)}, {playerName}!
+            </div>
+          </div>
 
-            {/* Action Bar */}
-            <div className="action-bar">
-              <button className="inventory-button" onClick={() => setShowGlobalInventory(true)}>
-                Inventory
-              </button>
-              {nearSign && (
-                <button className="explore-button" onClick={handleCheckOut}>
-                  Check out {nearSign.name}
-                </button>
-              )}
-              {showExploreButton && (
-                <button
-                  className="explore-button"
-                  onClick={() =>
-                    exploreTown(checkNearTown(position.x, position.y))
-                  }
+          {/* Time Display */}
+          <div className="time-display-container">
+            <div className="time-display">
+              <span>Day {gameTime.day}</span>
+              <div className="time-text">
+                {formatTime(gameTime.hours, gameTime.minutes)}
+              </div>
+            </div>
+          </div>
+
+          {/* Stats display */}
+          <div className="character-stats">
+            <div className="stat-item">
+              <span>Happiness:</span>
+              <div className="stat-bar happiness-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.happiness}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
                 >
-                  Explore
-                </button>
-              )}
-            </div>
-
-            {/* Character Stats */}
-            <div className="character-stats">
-              <div className="stat-item">
-                <span>Happiness:</span>
-                <div className="stat-bar happiness-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.happiness}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.happiness}%</div>
-                  </div>
+                  <div className="stat-percentage">{stats.happiness}%</div>
                 </div>
-              </div>
-              <div className="stat-item">
-                <span>Hunger:</span>
-                <div className="stat-bar hunger-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.hunger}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.hunger}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item">
-                <span>Sleep:</span>
-                <div className="stat-bar sleep-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.sleep}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.sleep}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item">
-                <span>Hygiene:</span>
-                <div className="stat-bar hygiene-bar">
-                  <div
-                    className="stat-fill"
-                    style={{
-                      width: `${stats.hygiene}%`,
-                      imageRendering: "pixelated",
-                      border: "1.5px solid #222",
-                    }}
-                  >
-                    <div className="stat-percentage">{stats.hygiene}%</div>
-                  </div>
-                </div>
-              </div>
-              <div className="stat-item gold-item">
-                <span>Gold:</span>
-                <span className="gold-amount">{stats.gold}</span>
               </div>
             </div>
-
-            {/* Sign Details Modal */}
-            {showSignDetails && nearSign && (
-              <div className="sign-details-modal">
-                <div className="sign-details-content">
-                  <h2>{nearSign.name}</h2>
-                  <p>{nearSign.description}</p>
-                  <button className="close-button" onClick={closeSignDetails}>
-                    Close
-                  </button>
+            <div className="stat-item">
+              <span>Hunger:</span>
+              <div className="stat-bar hunger-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.hunger}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.hunger}%</div>
                 </div>
               </div>
-            )}
-
-            {/* Modal Inventory Gabungan */}
-            {showGlobalInventory && (
-              <div className="inventory-modal">
-                <div className="inventory-content">
-                  <h2>Inventory</h2>
-                  <ul>
-                    {(() => {
-                      // Gabungkan inventory dari semua map
-                      const allInventories = [];
-                      const maps = ['jakarta', 'padang', 'papua', 'magelang'];
-                      maps.forEach(map => {
-                        const inv = JSON.parse(localStorage.getItem(map + 'Inventory') || '[]');
-                        allInventories.push(...inv);
-                      });
-                      if (allInventories.length === 0) return <li><i>Kosong</i></li>;
-                      return allInventories.map((item, idx) => <li key={idx}>{item}</li>);
-                    })()}
-                  </ul>
-                  <button className="close-inventory" onClick={() => setShowGlobalInventory(false)}>
-                    Close
-                  </button>
+            </div>
+            <div className="stat-item">
+              <span>Sleep:</span>
+              <div className="stat-bar sleep-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.sleep}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.sleep}%</div>
                 </div>
               </div>
-            )}
+            </div>
+            <div className="stat-item">
+              <span>Hygiene:</span>
+              <div className="stat-bar hygiene-bar">
+                <div
+                  className="stat-fill"
+                  style={{
+                    width: `${stats.hygiene}%`,
+                    imageRendering: "pixelated",
+                    border: "1.5px solid #222",
+                  }}
+                >
+                  <div className="stat-percentage">{stats.hygiene}%</div>
+                </div>
+              </div>
+            </div>
+            <div className="stat-item gold-item">
+              <span>Gold:</span>
+              <span className="gold-amount">{stats.gold}</span>
+            </div>
+          </div>
 
-            {/* Virtual Arrow Keys */}
-            <div className="arrow-keys">
+          {/* Character */}
+          <div
+            style={{
+              position: "absolute",
+              left: `${position.x}%`,
+              top: `${position.y}%`,
+              width: `${CHARACTER_SIZE}px`,
+              height: `${CHARACTER_SIZE}px`,
+              backgroundImage: `url('/Picture/${characterImage}.png')`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              transform: "translate(-50%, -50%)", // Center the character
+              zIndex: 100,
+            }}
+          />
+
+          {/* Coordinates Display */}
+          <div className="coordinates-display">
+            X: {Math.round(position.x)}% Y: {Math.round(position.y)}%
+          </div>
+
+          {/* Action Bar */}
+          <div className="action-bar">
+            <button className="inventory-button" onClick={toggleInventory}>
+              Inventory
+            </button>
+            {nearSign && (
+              <button className="explore-button" onClick={handleCheckOut}>
+                Check out {nearSign.name}
+              </button>
+            )}
+            {showExploreButton && (
               <button
-                onMouseDown={() => handleButtonStart("up")}
+                className="explore-button"
+                onClick={() =>
+                  exploreTown(checkNearTown(position.x, position.y))
+                }
+              >
+                Explore
+              </button>
+            )}
+          </div>
+
+          {/* Virtual Controls */}
+          <div className="arrow-keys">
+            <button
+              className="arrow-button"
+              onMouseDown={() => handleButtonStart("up")}
+              onMouseUp={handleButtonEnd}
+              onMouseLeave={handleButtonEnd}
+              onTouchStart={() => handleButtonStart("up")}
+              onTouchEnd={handleButtonEnd}
+            >
+              ↑
+            </button>
+            <div className="left-right">
+              <button
+                className="arrow-button"
+                onMouseDown={() => handleButtonStart("left")}
                 onMouseUp={handleButtonEnd}
                 onMouseLeave={handleButtonEnd}
-                onTouchStart={() => handleButtonStart("up")}
+                onTouchStart={() => handleButtonStart("left")}
                 onTouchEnd={handleButtonEnd}
-                onTouchCancel={handleButtonEnd}
-                className="arrow-button up"
               >
-                ▲
+                ←
               </button>
-              <div className="left-right">
-                <button
-                  onMouseDown={() => handleButtonStart("left")}
-                  onMouseUp={handleButtonEnd}
-                  onMouseLeave={handleButtonEnd}
-                  onTouchStart={() => handleButtonStart("left")}
-                  onTouchEnd={handleButtonEnd}
-                  onTouchCancel={handleButtonEnd}
-                  className="arrow-button left"
-                >
-                  ◀
-                </button>
-                <button
-                  onMouseDown={() => handleButtonStart("right")}
-                  onMouseUp={handleButtonEnd}
-                  onMouseLeave={handleButtonEnd}
-                  onTouchStart={() => handleButtonStart("right")}
-                  onTouchEnd={handleButtonEnd}
-                  onTouchCancel={handleButtonEnd}
-                  className="arrow-button right"
-                >
-                  ▶
-                </button>
-              </div>
               <button
+                className="arrow-button"
                 onMouseDown={() => handleButtonStart("down")}
                 onMouseUp={handleButtonEnd}
                 onMouseLeave={handleButtonEnd}
                 onTouchStart={() => handleButtonStart("down")}
                 onTouchEnd={handleButtonEnd}
-                onTouchCancel={handleButtonEnd}
-                className="arrow-button down"
               >
-                ▼
+                ↓
+              </button>
+              <button
+                className="arrow-button"
+                onMouseDown={() => handleButtonStart("right")}
+                onMouseUp={handleButtonEnd}
+                onMouseLeave={handleButtonEnd}
+                onTouchStart={() => handleButtonStart("right")}
+                onTouchEnd={handleButtonEnd}
+              >
+                →
               </button>
             </div>
-          </div>{" "}
-          {/* End of game-container */}
+          </div>
         </>
       )}
     </div>

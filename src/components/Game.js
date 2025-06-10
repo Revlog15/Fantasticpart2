@@ -19,7 +19,7 @@ function Game() {
 
   console.log("Selected Character:", selectedCharacter); // Debug log
 
-  const [position, setPosition] = useState({ x: 50, y: 50 });
+  const [position, setPosition] = useState({ x: 17, y: 23 });
   const [direction, setDirection] = useState("right");
   const [characterImage, setCharacterImage] = useState(
     `${selectedCharacter}-idle`
@@ -58,6 +58,8 @@ function Game() {
   const [showSignDetails, setShowSignDetails] = useState(false);
   const [showDeathScreen, setShowDeathScreen] = useState(false);
   const [finalScore, setFinalScore] = useState(0);
+  const [showDialog, setShowDialog] = useState(false);
+  const [currentDialog, setCurrentDialog] = useState(null);
 
   console.log("Initial Character Image:", `${selectedCharacter}-idle`); // Debug log
   console.log("Full Image Path:", `/Picture/${selectedCharacter}-idle.png`); // Debug log
@@ -214,31 +216,75 @@ function Game() {
     }
   };
 
-  // Define signs for the main map (now using percentage coordinates)
+  // Define signs for the main map with percentage coordinates
   const signs = [
     {
       id: 1,
-      x: 20,
-      y: 88,
+      x: 27,
+      y: 67,
       name: "Town Hall",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 61,
-      y: 68,
+      x: 85,
+      y: 52,
       name: "Market",
       description:
         "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
     },
     {
       id: 3,
-      x: 62,
-      y: 31,
+      x: 87,
+      y: 24,
       name: "Training Ground",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
+    },
+  ];
+
+  // Define NPCs
+  const npcs = [
+    {
+      id: 1,
+      name: "El Pemandu",
+      x: 32,
+      y: 58,
+      image: "npc_elpemandu",
+      description: "Seorang pemandu yang akan membantu perjalananmu.",
+      dialogs: {
+        initial: [
+          "Halo! Saya El Pemandu, pemandu perjalananmu. Saya akan membantu kamu memahami cara bermain game ini.",
+        ],
+        options: [
+          "Ya, saya ingin belajar cara bermain.",
+          "Tidak, saya sudah tahu.",
+        ],
+        responses: {
+          ask: [
+            {
+              text: "Baik, mari kita mulai dengan hal yang paling penting:",
+              options: ["Lanjutkan"],
+              onSelect: () => ({
+                text: "Perhatikan stats kamu (Happiness, Hunger, Sleep, Hygiene). Jangan biarkan salah satu dari stats tersebut mencapai 0, karena itu akan menyebabkan GAME OVER!",
+                options: ["Mengerti, apa lagi?"],
+                onSelect: () => ({
+                  text: "Kota awal kamu adalah Jakarta. Di sana kamu bisa belajar membuat Kerak Telor. Setiap kota memiliki makanan khasnya sendiri yang bisa kamu pelajari.",
+                  options: ["Kota apa saja yang bisa saya kunjungi?"],
+                  onSelect: () => ({
+                    text: "Kamu bisa mengunjungi:\n1. Jakarta (Kota Awal)\n2. Padang (Rendang)\n3. Papua (Papeda)\n4. Magelang\n\nUntuk membuka kota baru, kamu bisa:\n1. Mengumpulkan emas dan membelinya\n2. Atau menyelesaikan quest di kota sebelumnya",
+                    options: ["Terima kasih atas informasinya!"],
+                    onSelect: () => setShowDialog(false),
+                  }),
+                }),
+              }),
+            },
+          ],
+          decline:
+            "Baik, jika kamu membutuhkan bantuan atau lupa cara bermain, jangan ragu untuk bertanya lagi!",
+        },
+      },
     },
   ];
 
@@ -512,6 +558,77 @@ function Game() {
     setShowDeathScreen(false);
   };
 
+  // Function to handle NPC dialog
+  const handleDialog = (npc) => {
+    // Fungsi untuk membuat dan menampilkan langkah dialog
+    const displayDialogStep = (dialogData) => {
+      // Pastikan options selalu array untuk mencegah error rendering
+      if (!Array.isArray(dialogData.options)) {
+        console.error("Dialog options is not an array:", dialogData.options);
+        setShowDialog(false); // Sembunyikan dialog jika ada data yang salah
+        return;
+      }
+
+      setCurrentDialog({
+        text: dialogData.text,
+        options: dialogData.options,
+        onSelect: (optionIndex) => {
+          if (dialogData.onSelect) {
+            const nextStepData = dialogData.onSelect(optionIndex);
+            if (nextStepData) {
+              // Jika ada langkah selanjutnya, tampilkan
+              displayDialogStep(nextStepData);
+            } else {
+              // Jika tidak ada, tutup dialog
+              setShowDialog(false);
+              setCurrentDialog(null);
+            }
+          } else {
+            // Tutup dialog jika tidak ada handler onSelect
+            setShowDialog(false);
+            setCurrentDialog(null);
+          }
+        },
+      });
+    };
+
+    // Struktur dialog yang lebih aman
+    const dialogTree = {
+      initial: {
+        text: "Halo! Saya El Pemandu, pemandu perjalananmu. Saya akan membantu kamu memahami cara bermain game ini.",
+        options: ["Ya, saya ingin belajar.", "Tidak, saya sudah tahu."],
+        onSelect: (index) => {
+          if (index === 0) return dialogTree.ask;
+          if (index === 1) return dialogTree.decline;
+        },
+      },
+      ask: {
+        text: "Baik, mari kita mulai dengan hal yang paling penting: Perhatikan stats kamu (Happiness, Hunger, Sleep, Hygiene). Jangan biarkan salah satu dari stats tersebut mencapai 0, karena itu akan menyebabkan GAME OVER!",
+        options: ["Mengerti, apa lagi?"],
+        onSelect: () => dialogTree.explainCities,
+      },
+      explainCities: {
+        text: "Kota awal kamu adalah Jakarta. Di sana kamu bisa belajar membuat Kerak Telor. Setiap kota memiliki makanan khasnya sendiri yang bisa kamu pelajari.",
+        options: ["Kota apa saja yang bisa saya kunjungi?"],
+        onSelect: () => dialogTree.listCities,
+      },
+      listCities: {
+        text: "Kamu bisa mengunjungi:\n1. Jakarta (Kota Awal)\n2. Padang (Rendang)\n3. Papua (Papeda)\n4. Magelang\n\nUntuk membuka kota baru, kamu bisa mengumpulkan emas dan membelinya atau menyelesaikan quest.",
+        options: ["Terima kasih atas informasinya!"],
+        onSelect: () => null, // Opsi terakhir, kembalikan null untuk menutup
+      },
+      decline: {
+        text: "Baik, jika kamu membutuhkan bantuan atau lupa cara bermain, jangan ragu untuk bertanya lagi!",
+        options: ["Baik"],
+        onSelect: () => null, // Opsi terakhir, kembalikan null untuk menutup
+      },
+    };
+
+    setShowDialog(true);
+    // Mulai dialog dari langkah awal
+    displayDialogStep(dialogTree.initial);
+  };
+
   // Render town component if in a town view
   if (currentTown) {
     if (currentTown === "home") {
@@ -755,6 +872,138 @@ function Game() {
               zIndex: 100,
             }}
           />
+
+          {/* NPCs */}
+          {npcs.map((npc) => {
+            const distance = Math.sqrt(
+              Math.pow(position.x - npc.x, 2) + Math.pow(position.y - npc.y, 2)
+            );
+            const isNearby = distance < 5; // NPC detection radius
+
+            return (
+              <div key={npc.id}>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: `${npc.x}%`,
+                    top: `${npc.y}%`,
+                    width: `${CHARACTER_SIZE}px`,
+                    height: `${CHARACTER_SIZE}px`,
+                    backgroundImage: `url('/Picture/${npc.image}.png')`,
+                    backgroundSize: "contain",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "center",
+                    zIndex: 90,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+                {isNearby && (
+                  <button
+                    className="npc-interaction-button"
+                    onClick={() => handleDialog(npc)}
+                    style={{
+                      position: "absolute",
+                      left: `${npc.x}%`,
+                      top: `${npc.y - 5}%`,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 1000,
+                      backgroundColor: "rgba(0, 0, 0, 0.8)",
+                      color: "white",
+                      padding: "8px 15px",
+                      borderRadius: "5px",
+                      border: "2px solid #ffd700",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      fontSize: "14px",
+                      boxShadow: "0 0 10px rgba(255, 215, 0, 0.3)",
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    Talk to {npc.name}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Dialog Box */}
+          {showDialog && currentDialog && (
+            <div
+              className="dialog-box"
+              style={{
+                position: "fixed",
+                bottom: "20%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                padding: "20px",
+                borderRadius: "10px",
+                border: "2px solid #ffd700",
+                color: "white",
+                width: "80%",
+                maxWidth: "600px",
+                zIndex: 1000,
+                boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
+              }}
+            >
+              <div className="dialog-content">
+                <div
+                  className="dialog-text"
+                  style={{
+                    marginBottom: "15px",
+                    fontSize: "16px",
+                    lineHeight: "1.5",
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {currentDialog.text}
+                </div>
+                <div
+                  className="dialog-options"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  {(Array.isArray(currentDialog.options) &&
+                  currentDialog.options.length > 0
+                    ? currentDialog.options
+                    : ["Tutup"]
+                  ).map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        if (currentDialog.onSelect) {
+                          currentDialog.onSelect(index);
+                        } else {
+                          setShowDialog(false);
+                          setCurrentDialog(null);
+                        }
+                      }}
+                      style={{
+                        backgroundColor: "#FFD700",
+                        color: "#222",
+                        border: "3px solid #222",
+                        padding: "14px 24px",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        marginBottom: "10px",
+                        zIndex: 2000,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                        width: "100%",
+                        outline: "none",
+                      }}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Coordinates Display */}
           <div className="coordinates-display">

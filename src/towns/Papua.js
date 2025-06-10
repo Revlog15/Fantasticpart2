@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
 
-function Papua({ onReturn, stats, updateStats }) {
-  console.log("Papua component rendering..."); // Debug log
+function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 40, y: 30 });
@@ -12,17 +11,30 @@ function Papua({ onReturn, stats, updateStats }) {
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
-  const [inventory, setInventory] = useState([]);
-  const [questProgress, setQuestProgress] = useState({
-    hasStartedQuest: false,
-    hasIkan: false,
-    hasSagu: false,
-    hasBumbu: false,
+  const [questProgress, setQuestProgress] = useState(() => {
+    const savedQuestProgress = localStorage.getItem("papuaQuestProgress");
+    const initialProgress = savedQuestProgress
+      ? JSON.parse(savedQuestProgress)
+      : {
+          hasStartedQuest: false,
+          hasIkan: false,
+          hasSagu: false,
+          hasBumbu: false,
+        };
+
+    // Check initial inventory for already collected items to ensure persistence
+    return {
+      ...initialProgress,
+      hasIkan: initialProgress.hasIkan || inventory.includes("Ikan Segar"),
+      hasSagu: initialProgress.hasSagu || inventory.includes("Tepung Sagu"),
+      hasBumbu: initialProgress.hasBumbu || inventory.includes("Bumbu"),
+    };
   });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const CHARACTER_SIZE = 150;
   const MOVEMENT_SPEED = 1;
   const NPC_DETECTION_RADIUS = 15;
+  const INTERACTIVE_SPOT_DETECTION_RADIUS = 8;
   const [typedText, setTypedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -32,10 +44,12 @@ function Papua({ onReturn, stats, updateStats }) {
   const [lastCollectedItem, setLastCollectedItem] = useState(null);
   const [showCookingAnimation, setShowCookingAnimation] = useState(false);
   const [showPapeda, setShowPapeda] = useState(false);
-  const [papedaPosition, setPapedaPosition] = useState({ x: 60, y: 40 });
+  const [papedaPosition, setPapedaPosition] = useState({ x: 50, y: 50 });
   const [cookingProgress, setCookingProgress] = useState(0);
   const [showCongrats, setShowCongrats] = useState(false);
   const typingIntervalRef = useRef(null);
+  const [nearInteractiveSpot, setNearInteractiveSpot] = useState(null);
+  const [papedaCount, setPapedaCount] = useState(3);
 
   const selectedCharacter = (
     localStorage.getItem("selectedCharacter") || "revlog"
@@ -186,8 +200,39 @@ function Papua({ onReturn, stats, updateStats }) {
     },
   ];
 
+  // Define interactive spots with their effects
+  const interactiveSpots = [
+    {
+      id: 1,
+      name: "Sungai Jernih",
+      x: 30,
+      y: 70,
+      image: "river_spot", // You'll need to add this image
+      description: "Minum air sungai untuk menghilangkan haus.",
+      statsEffect: { hunger: +20, hygiene: -5 }, // Mengurangi hunger, sedikit mengurangi hygiene
+    },
+    {
+      id: 2,
+      name: "Pohon Buah",
+      x: 70,
+      y: 35,
+      image: "fruit_tree_spot", // You'll need to add this image
+      description: "Memetik buah-buahan segar untuk mengisi perut.",
+      statsEffect: { hunger: +15, happiness: +5 }, // Mengurangi hunger, sedikit menambah happiness
+    },
+    {
+      id: 3,
+      name: "Tempat Bersantai",
+      x: 10,
+      y: 10,
+      image: "relax_spot", // You'll need to add this image
+      description: "Beristirahat dan menenangkan diri.",
+      statsEffect: { happiness: +15, sleep: +10 }, // Menambah happiness, menambah sleep
+    },
+  ];
+
   // Function to get item description
-  const getItemDescription = (item) => {
+  const getItemDescription = useCallback((item) => {
     const descriptions = {
       "Ikan Segar": "Ikan segar dari Anosheep",
       "Tepung Sagu": "Tepung sagu murni dari kebun Dinozaurus",
@@ -195,7 +240,7 @@ function Papua({ onReturn, stats, updateStats }) {
       Papeda: "Papeda yang lezat dan bergizi",
     };
     return descriptions[item] || "Bahan untuk membuat Papeda";
-  };
+  }, []);
 
   // Function to create a dialog message with speaker
   const createDialogMessage = (text, speaker, icon = null) => ({
@@ -204,39 +249,78 @@ function Papua({ onReturn, stats, updateStats }) {
     icon,
   });
 
-  // Add ingredient to inventory with animation
-  const addToInventory = (item) => {
-    // Get NPC position for animation start point
-    const npcPos = npcs.find(
-      (n) =>
-        (item === "Ikan Segar" && n.name === "Anosheep") ||
-        (item === "Tepung Sagu" && n.name === "Dinozaurus") ||
-        (item === "Bumbu" && n.name === "Bebi")
-    );
+  // Sync questProgress with inventory whenever inventory changes
+  useEffect(() => {
+    setQuestProgress((prev) => ({
+      ...prev,
+      hasIkan: prev.hasIkan || inventory.includes("Ikan Segar"),
+      hasSagu: prev.hasSagu || inventory.includes("Tepung Sagu"),
+      hasBumbu: prev.hasBumbu || inventory.includes("Bumbu"),
+    }));
+  }, [inventory]);
 
-    // Show collection animation
-    if (npcPos) {
-      setCollectingIngredient({
-        item,
-        emoji: ingredientEmojis[item],
-        position: {
-          x: npcPos.x + CHARACTER_SIZE / 2,
-          y: npcPos.y + CHARACTER_SIZE / 2,
-        },
-      });
+  // Save questProgress to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("papuaQuestProgress", JSON.stringify(questProgress));
+  }, [questProgress]);
+
+  // Check if all ingredients are collected using the *passed* inventory prop
+  useEffect(() => {
+    const allIngredientsCollected =
+      inventory.includes("Ikan Segar") &&
+      inventory.includes("Tepung Sagu") &&
+      inventory.includes("Bumbu");
+
+    if (allIngredientsCollected) {
+      if (papedaCount > 0) {
+        setShowPapeda(true);
+        setPapedaPosition({ x: 50, y: 50 }); // Posisikan Papeda di tengah
+      } else {
+        // If papedaCount is 0, hide Papeda as it's already collected all times
+        setShowPapeda(false);
+      }
     }
+  }, [papedaCount, inventory]);
 
-    // Add to inventory after animation
-    setTimeout(() => {
-      setInventory((prev) => {
-        const newInventory = [...prev, item];
-        localStorage.setItem("papuaInventory", JSON.stringify(newInventory));
-        return newInventory;
+  // Function to collect Papeda
+  const handleCollectPapeda = useCallback(() => {
+    if (papedaCount > 0) {
+      addToInventory("Papeda"); // Panggil addToInventory dari props
+      setPapedaCount((prev) => prev - 1);
+      setShowPapeda(false); // Sembunyikan Papeda setelah dikumpulkan
+      setShowCongrats(true); // Tampilkan pesan selamat
+      setTimeout(() => setShowCongrats(false), 3000); // Sembunyikan setelah 3 detik
+    } else {
+      console.log("Papeda sudah habis.");
+    }
+  }, [papedaCount, addToInventory]); // Tambahkan addToInventory sebagai dependensi
+
+  // Add ingredient to inventory with animation
+  // Fungsi ini akan memanggil addToInventory yang diteruskan dari Game.js
+  const handleCollectIngredient = useCallback(
+    (ingredient) => {
+      setCollectingIngredient(ingredient);
+      setLastCollectedItem(ingredient);
+
+      // Panggil addToInventory dari props (dari Game.js)
+      addToInventory(ingredient);
+
+      // Update questProgress immediately as well, based on what was collected
+      setQuestProgress((prev) => {
+        let updatedProgress = { ...prev };
+        if (ingredient === "Ikan Segar") updatedProgress.hasIkan = true;
+        if (ingredient === "Tepung Sagu") updatedProgress.hasSagu = true;
+        if (ingredient === "Bumbu") updatedProgress.hasBumbu = true;
+        return updatedProgress;
       });
-      setLastCollectedItem(item);
-      setCollectingIngredient(null);
-    }, 1000);
-  };
+
+      // Show collection animation
+      setTimeout(() => {
+        setCollectingIngredient(null);
+      }, 1000);
+    },
+    [addToInventory]
+  );
 
   // Typing animation effect
   const typeText = useCallback(
@@ -474,6 +558,9 @@ function Papua({ onReturn, stats, updateStats }) {
                     if (optionIndex === npc.dialogs.correct) {
                       setQuestProgress({ ...questProgress, hasBumbu: true });
                       addToInventory("Bumbu");
+                      // Papeda muncul segera setelah bumbu didapat
+                      setShowPapeda(true);
+
                       setCurrentDialog({
                         ...createDialogMessage(npc.dialogs.success, "Bebi"),
                         options: ["Terima kasih! Saatnya membuat Papeda!"],
@@ -529,9 +616,7 @@ function Papua({ onReturn, stats, updateStats }) {
   // Load inventory & progress from localStorage
   useEffect(() => {
     function reloadFromStorage() {
-      const savedInventory = localStorage.getItem("papuaInventory");
-      if (savedInventory) setInventory(JSON.parse(savedInventory));
-      const savedProgress = localStorage.getItem("papuaProgress");
+      const savedProgress = localStorage.getItem("papuaQuestProgress");
       if (savedProgress) setQuestProgress(JSON.parse(savedProgress));
     }
     reloadFromStorage();
@@ -539,76 +624,10 @@ function Papua({ onReturn, stats, updateStats }) {
     return () => window.removeEventListener("focus", reloadFromStorage);
   }, []);
 
-  // Save inventory to localStorage
-  useEffect(() => {
-    localStorage.setItem("papuaInventory", JSON.stringify(inventory));
-  }, [inventory]);
-
-  // Save progress to localStorage
-  useEffect(() => {
-    localStorage.setItem("papuaProgress", JSON.stringify(questProgress));
-  }, [questProgress]);
-
   // Save stats to localStorage
   useEffect(() => {
     localStorage.setItem("gameStats", JSON.stringify(stats));
   }, [stats]);
-
-  const handleCollectIngredient = (ingredient) => {
-    setCollectingIngredient(ingredient);
-    setLastCollectedItem(ingredient);
-    setShowOptions(false);
-    setShowDialog(false);
-
-    // Update stats based on ingredient collected
-    switch (ingredient) {
-      case "papeda":
-        updateStats({ hunger: stats.hunger + 30 });
-        break;
-      case "sagu":
-        updateStats({ happiness: stats.happiness + 5 });
-        break;
-      case "ikan":
-        updateStats({ happiness: stats.happiness + 5 });
-        break;
-      default:
-        break;
-    }
-
-    // Update quest progress
-    setQuestProgress((prev) => ({
-      ...prev,
-      hasPapeda: ingredient === "papeda" ? true : prev.hasPapeda,
-      hasSagu: ingredient === "sagu" ? true : prev.hasSagu,
-      hasIkan: ingredient === "ikan" ? true : prev.hasIkan,
-    }));
-
-    // Add to inventory
-    const newItem = {
-      id: Date.now(),
-      name: ingredient,
-      image: `/Picture/${ingredient}.png`,
-    };
-    setInventory((prev) => [...prev, newItem]);
-
-    // Show collection animation
-    setTimeout(() => {
-      setCollectingIngredient(null);
-    }, 1000);
-  };
-
-  const handleCookingComplete = () => {
-    setShowCookingAnimation(false);
-    setShowPapeda(true);
-    setShowCongrats(true);
-    updateStats({
-      happiness: stats.happiness + 20,
-      hunger: stats.hunger + 30,
-    });
-    setTimeout(() => {
-      setShowCongrats(false);
-    }, 3000);
-  };
 
   // Check if character is near an NPC
   const checkNearNPC = (x, y) => {
@@ -625,10 +644,41 @@ function Papua({ onReturn, stats, updateStats }) {
     setNearNPC(foundNPC);
   };
 
+  // Check if character is near an interactive spot
+  const checkNearInteractiveSpot = (x, y) => {
+    let foundSpot = null;
+    for (const spot of interactiveSpots) {
+      const distance = Math.sqrt(
+        Math.pow(x - spot.x, 2) + Math.pow(y - spot.y, 2)
+      );
+      if (distance < INTERACTIVE_SPOT_DETECTION_RADIUS) {
+        foundSpot = spot;
+        break;
+      }
+    }
+    setNearInteractiveSpot(foundSpot);
+  };
+
   // Add effect to check NPC proximity on mount and position changes
   useEffect(() => {
     checkNearNPC(position.x, position.y);
+    checkNearInteractiveSpot(position.x, position.y);
   }, [position.x, position.y]);
+
+  // Function to handle interactive spot actions
+  const handleInteractiveSpot = (spot) => {
+    // Apply stat changes
+    if (spot.statsEffect) {
+      updateStats(spot.statsEffect);
+      // Optionally, show a temporary message about the interaction
+      setShowDialog(true);
+      setCurrentDialog({
+        text: `${spot.name}: ${spot.description} Stats Updated!`,
+        options: ["OK"],
+        onSelect: () => setShowDialog(false),
+      });
+    }
+  };
 
   // Handle character movement
   const moveCharacter = (moveDirection) => {
@@ -666,8 +716,9 @@ function Papua({ onReturn, stats, updateStats }) {
     setDirection(newDirection);
     setCharacterImage(newImage);
 
-    // Check for nearby NPCs after movement
+    // Check for nearby NPCs and interactive spots after movement
     checkNearNPC(newX, newY);
+    checkNearInteractiveSpot(newX, newY);
   };
 
   // Handle keyboard controls
@@ -975,6 +1026,62 @@ function Papua({ onReturn, stats, updateStats }) {
         );
       })}
 
+      {/* Interactive Spots */}
+      {interactiveSpots.map((spot) => {
+        const distance = Math.sqrt(
+          Math.pow(position.x - spot.x, 2) + Math.pow(position.y - spot.y, 2)
+        );
+        const isNearby = distance < INTERACTIVE_SPOT_DETECTION_RADIUS;
+
+        return (
+          <div key={spot.id}>
+            <div
+              style={{
+                position: "absolute",
+                left: `${spot.x}%`,
+                top: `${spot.y}%`,
+                width: `60px`,
+                height: `60px`,
+                backgroundImage: `url('/Picture/${spot.image}.png')`,
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                zIndex: 90,
+                transform: "translate(-50%, -50%)",
+                opacity: 1,
+              }}
+            />
+            {isNearby &&
+              nearInteractiveSpot &&
+              nearInteractiveSpot.id === spot.id && (
+                <button
+                  className="interactive-spot-button"
+                  onClick={() => handleInteractiveSpot(spot)}
+                  style={{
+                    position: "absolute",
+                    left: `${spot.x}%`,
+                    top: `${spot.y - 8}%`,
+                    transform: "translate(-50%, -50%)",
+                    zIndex: 1000,
+                    backgroundColor: "rgba(0, 0, 0, 0.8)",
+                    color: "white",
+                    padding: "8px 15px",
+                    borderRadius: "5px",
+                    border: "2px solid #aaff00", // Greenish border for interactive spots
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    fontSize: "14px",
+                    boxShadow: "0 0 10px rgba(170, 255, 0, 0.3)",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  Interaksi: {spot.name}
+                </button>
+              )}
+          </div>
+        );
+      })}
+
       {/* Dialog Box */}
       {showDialog && (
         <div className="dialog-box">
@@ -1043,28 +1150,6 @@ function Papua({ onReturn, stats, updateStats }) {
         </div>
       )}
 
-      {/* Papeda */}
-      {showPapeda && (
-        <div
-          className="papeda"
-          style={{
-            position: "absolute",
-            left: `${papedaPosition.x}%`,
-            top: `${papedaPosition.y}%`,
-            transform: "translate(-50%, -50%)",
-            cursor: "pointer",
-            zIndex: 1000,
-          }}
-          onClick={() => handleCollectIngredient("papeda")}
-        >
-          <img
-            src="/Picture/papeda.png"
-            alt="Papeda"
-            style={{ width: "100px", height: "100px" }}
-          />
-        </div>
-      )}
-
       {/* Congratulations Message */}
       {showCongrats && (
         <div className="congrats-message">
@@ -1130,45 +1215,249 @@ function Papua({ onReturn, stats, updateStats }) {
 
       {/* Inventory Modal */}
       {showInventory && (
-        <div className="inventory-modal">
-          <div className="inventory-content">
-            <h2>Inventory</h2>
-            <div className="inventory-items">
-              {inventory.map((item, index) => (
-                <div key={index} className="inventory-item">
-                  <span>{item}</span>
-                  <span>{ingredientEmojis[item]}</span>
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(0, 0, 0, 0.95)",
+            padding: "20px",
+            borderRadius: "10px",
+            zIndex: 2000,
+            minWidth: "300px",
+            border: "2px solid #FFD700",
+            boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                color: "#FFD700",
+                textAlign: "center",
+                marginBottom: "20px",
+                fontSize: "24px",
+                textShadow: "0 0 10px rgba(255, 215, 0, 0.5)",
+              }}
+            >
+              Inventory
+            </h2>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                maxHeight: "400px",
+                overflowY: "auto",
+                padding: "10px",
+              }}
+            >
+              {inventory.length === 0 ? (
+                <div
+                  style={{
+                    color: "#888",
+                    textAlign: "center",
+                    padding: "20px",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Inventory kosong
                 </div>
-              ))}
+              ) : (
+                inventory.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255, 215, 0, 0.3)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "24px",
+                          filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))",
+                        }}
+                      >
+                        {ingredientEmojis[item]}
+                      </span>
+                      <span
+                        style={{
+                          color: "white",
+                          fontSize: "16px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {item}
+                      </span>
+                    </div>
+                    {item === "Papeda" && (
+                      <button
+                        onClick={() => {
+                          // Update stats
+                          updateStats({
+                            happiness: Math.min(100, stats.happiness + 30),
+                            hunger: Math.min(100, stats.hunger + 40),
+                          });
+                          // Remove Papeda from inventory
+                          setInventory((prev) =>
+                            prev.filter((i) => i !== "Papeda")
+                          );
+                          // Show message
+                          setShowDialog(true);
+                          setCurrentDialog({
+                            text: "Papeda dimakan! Happiness +30, Hunger +40",
+                            options: ["OK"],
+                            onSelect: () => setShowDialog(false),
+                          });
+                        }}
+                        style={{
+                          background: "#4CAF50",
+                          color: "white",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          transition: "all 0.2s ease",
+                          ":hover": {
+                            background: "#45a049",
+                            transform: "scale(1.05)",
+                          },
+                        }}
+                      >
+                        Makan
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
             <button
-              className="close-inventory"
               onClick={() => setShowInventory(false)}
+              style={{
+                background: "#FFD700",
+                color: "#000",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                marginTop: "20px",
+                width: "100%",
+                fontWeight: "bold",
+                fontSize: "16px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                transition: "all 0.2s ease",
+                ":hover": {
+                  background: "#FFC800",
+                  transform: "scale(1.02)",
+                },
+              }}
             >
-              Close
+              Tutup
             </button>
           </div>
         </div>
       )}
 
-      {/* Coordinate Display */}
+      {/* Checklist Bahan Papeda - Dipindahkan dari luar return */}
       <div
         style={{
           position: "fixed",
-          top: "10px",
+          top: "10px", // Sesuaikan posisi ke paling atas
           left: "10px",
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          background: "rgba(0,0,0,0.85)",
           color: "white",
-          padding: "8px 15px",
-          borderRadius: "5px",
+          borderRadius: 8,
           border: "2px solid #ffd700",
-          fontSize: "14px",
-          zIndex: 1000,
+          padding: "12px 18px",
+          zIndex: 1200,
+          minWidth: 180,
+          fontSize: 16,
           fontFamily: "monospace",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
         }}
       >
-        X: {Math.round(position.x)}% | Y: {Math.round(position.y)}%
+        <div style={{ fontWeight: "bold", marginBottom: 8 }}>
+          Checklist Bahan Papeda:
+        </div>
+        <div style={{ color: questProgress.hasIkan ? "#00ff00" : "#aaa" }}>
+          {questProgress.hasIkan ? "✔" : "✗"} Ikan Segar
+        </div>
+        <div style={{ color: questProgress.hasSagu ? "#00ff00" : "#aaa" }}>
+          {questProgress.hasSagu ? "✔" : "✗"} Tepung Sagu
+        </div>
+        <div style={{ color: questProgress.hasBumbu ? "#00ff00" : "#aaa" }}>
+          {questProgress.hasBumbu ? "✔" : "✗"} Bumbu
+        </div>
       </div>
+
+      {/* Papeda */}
+      {showPapeda && papedaCount > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            left: `${papedaPosition.x}%`,
+            top: `${papedaPosition.y}%`,
+            transform: "translate(-50%, -50%)",
+            zIndex: 1000,
+            cursor: "pointer",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "12px",
+          }}
+          onClick={handleCollectPapeda}
+        >
+          <img
+            src="/Picture/item_papeda.png"
+            alt="Papeda"
+            style={{
+              width: "120px",
+              height: "120px",
+              objectFit: "contain",
+            }}
+          />
+          <div
+            style={{
+              background: "rgba(0,0,0,0.8)",
+              color: "white",
+              padding: "5px 10px",
+              borderRadius: "5px",
+              fontSize: "14px",
+            }}
+          >
+            Sisa: {papedaCount}
+          </div>
+          <button
+            style={{
+              background: "#FFD700",
+              color: "#222",
+              border: "2px solid #222",
+              borderRadius: "8px",
+              fontWeight: "bold",
+              fontSize: "18px",
+              padding: "10px 24px",
+              cursor: "pointer",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+            }}
+          >
+            Ambil Papeda
+          </button>
+        </div>
+      )}
     </div>
   );
 }

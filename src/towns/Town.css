@@ -947,77 +947,183 @@
   }
 }
 
-.dialog-text {
-  font-size: 1.2rem;
-  color: #eee;
-  text-shadow: 1px 1px #000;
-  overflow-wrap: break-word; /* Ensure long words wrap */
-  word-wrap: break-word;
-  white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
-  padding-left: 5px; /* Add padding to prevent first character clipping */
-  box-sizing: border-box; /* Include padding in the element's total width and height */
-  max-height: 150px; /* Limit height to prevent dialog box from becoming too large */
-  min-height: 60px;
-  margin-bottom: 10px;
-  line-height: 1.6;
-  display: block; /* Ensure it behaves as a block element for consistent padding and flow */
-  position: relative; /* Add position relative */
-  left: 0; /* Ensure it starts from the left edge */
-}
-
-.dialog-cursor {
-  display: inline-block;
-  width: 8px;
-  height: 20px;
-  background-color: #ffd700;
-  margin-left: 5px;
-  animation: blink 1s infinite;
-  vertical-align: middle;
-}
-
 .dialog-box {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  width: 80%;
-  max-width: 600px;
+  width: 90%;
+  max-width: 800px;
   background: linear-gradient(
     135deg,
     rgba(0, 0, 0, 0.95) 0%,
     rgba(0, 0, 0, 0.85) 100%
   );
-  border: 2px solid #ffd700;
-  border-radius: 10px;
-  padding: 20px;
+  border: 3px solid #ffd700;
+  border-radius: 15px;
+  padding: 25px;
   color: white;
   z-index: 1000;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
   opacity: 0;
-  animation: fadeInDialog 0.3s forwards;
+  animation: fadeInDialog 0.4s forwards;
+  backdrop-filter: blur(10px);
 }
 
-@keyframes fadeInDialog {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dialog-speaker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 15px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.speaker-npc {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.speaker-player {
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+.speaker-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #ffd700;
+  background-size: cover;
+  background-position: center;
+}
+
+.dialog-text-container {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin: 10px 0;
+}
+
+.dialog-text {
+  font-size: 1.3rem;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.dialog-text::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dialog-text::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.dialog-text::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+}
+
+.dialog-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 24px;
+  background-color: #ffd700;
+  margin-left: 5px;
+  animation: blink 1s infinite;
+  vertical-align: middle;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .dialog-options {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   opacity: 0;
   transform: translateY(10px);
+  margin-top: 10px;
 }
 
 .dialog-options.show {
-  animation: fadeInOptions 0.3s forwards;
+  animation: fadeInOptions 0.4s forwards;
+}
+
+.dialog-option {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 215, 0, 0.15) 0%,
+    rgba(255, 215, 0, 0.05) 100%
+  );
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.dialog-option:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 215, 0, 0.3) 0%,
+    rgba(255, 215, 0, 0.2) 100%
+  );
+  transform: translateX(5px);
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.dialog-option:active {
+  transform: translateX(2px);
+}
+
+.fast-forward-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #ffd700;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.fast-forward-btn:hover {
+  background: rgba(255, 215, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInDialog {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 30px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 @keyframes fadeInOptions {
@@ -1031,28 +1137,14 @@
   }
 }
 
-.dialog-option {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 215, 0, 0.2) 0%,
-    rgba(255, 215, 0, 0.1) 100%
-  );
-  border: 1px solid #ffd700;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: left;
-}
-
-.dialog-option:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 215, 0, 0.4) 0%,
-    rgba(255, 215, 0, 0.2) 100%
-  );
-  transform: translateX(5px);
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .quest-progress {
@@ -1108,118 +1200,6 @@
 .npc-interaction-button:hover {
   background-color: rgba(255, 215, 0, 0.4);
   transform: translateY(-2px);
-}
-
-/* Dialog Speaker Indicators */
-.dialog-speaker {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-}
-
-.speaker-npc {
-  color: #ffd700;
-}
-
-.speaker-player {
-  color: #00ffff;
-}
-
-.speaker-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 10px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  display: inline-block;
-}
-
-.dialog-text-container {
-  background: rgba(0, 0, 0, 0.5);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-/* Ingredient Collection Animation */
-.ingredient-collect {
-  position: fixed;
-  font-size: 48px;
-  pointer-events: none;
-  z-index: 2000;
-  animation: collectIngredient 1.5s ease-out forwards;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-@keyframes collectIngredient {
-  0% {
-    transform: scale(0.5) translateY(0);
-    opacity: 0;
-  }
-  20% {
-    transform: scale(1.2) translateY(-20px);
-    opacity: 1;
-  }
-  80% {
-    transform: scale(1) translateY(-100px);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.8) translateY(-150px);
-    opacity: 0;
-  }
-}
-
-.ingredient-flash {
-  position: fixed;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 215, 0, 0.4) 0%,
-    rgba(255, 215, 0, 0) 70%
-  );
-  pointer-events: none;
-  z-index: 1999;
-  animation: flash 0.8s ease-out forwards;
-}
-
-@keyframes flash {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
-}
-
-/* Inventory Item Animation */
-.inventory-item-new {
-  animation: newItem 0.5s ease-in-out;
-}
-
-@keyframes newItem {
-  0% {
-    transform: scale(1);
-    background: rgba(255, 215, 0, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    background: rgba(255, 215, 0, 0.5);
-  }
-  100% {
-    transform: scale(1);
-    background: rgba(255, 255, 255, 0.1);
-  }
 }
 
 /* Character Stats Styles */

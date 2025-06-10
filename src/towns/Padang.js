@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Town.css";
 
-function Padang({ onReturn, stats, updateStats }) {
+function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 40, y: 30 });
@@ -11,12 +11,26 @@ function Padang({ onReturn, stats, updateStats }) {
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
-  const [inventory, setInventory] = useState([]);
-  const [questProgress, setQuestProgress] = useState({
-    hasStartedQuest: false,
-    hasDaging: false,
-    hasSantan: false,
-    hasCabai: false,
+  const [questProgress, setQuestProgress] = useState(() => {
+    const savedQuestProgress = localStorage.getItem("padangQuestProgress");
+    const initialProgress = savedQuestProgress
+      ? JSON.parse(savedQuestProgress)
+      : {
+          hasStartedQuest: false,
+          hasDaging: false,
+          hasSantan: false,
+          hasCabai: false,
+        };
+
+    // Check initial inventory for already collected items
+    return {
+      ...initialProgress,
+      hasDaging:
+        initialProgress.hasDaging || inventory.includes("Daging Sapi Segar"),
+      hasSantan:
+        initialProgress.hasSantan || inventory.includes("Santan Kelapa"),
+      hasCabai: initialProgress.hasCabai || inventory.includes("Cabai Merah"),
+    };
   });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const CHARACTER_SIZE = 150;
@@ -33,12 +47,20 @@ function Padang({ onReturn, stats, updateStats }) {
   const [rendangPosition, setRendangPosition] = useState({ x: 60, y: 40 });
   const [cookingProgress, setCookingProgress] = useState(0);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [rendangCount, setRendangCount] = useState(() => {
+    const savedCount = localStorage.getItem("rendangCount");
+    return savedCount ? parseInt(savedCount, 10) : 3;
+  });
 
   const selectedCharacter =
     localStorage.getItem("selectedCharacter") || "revlog";
   const [characterImage, setCharacterImage] = useState(
     `${selectedCharacter}-idle`
   );
+
+  useEffect(() => {
+    localStorage.setItem("rendangCount", rendangCount.toString());
+  }, [rendangCount]);
 
   // Define NPCs for Padang with their dialogs
   const npcs = [
@@ -283,56 +305,55 @@ function Padang({ onReturn, stats, updateStats }) {
     Cabai: "🌶️",
   };
 
-  // Add ingredient to inventory with animation
-  const addToInventory = (item) => {
-    // Get NPC position for animation start point
-    const npcPos = npcs.find(
-      (n) =>
-        (item === "Daging Sapi" && n.name === "Anosheep") ||
-        ((item === "Santan" || item === "Cabai") && n.name === "Dinozaurus") ||
-        (item === "Gula Aren" && n.name === "Bebi")
-    );
-
-    // Show collection animation
-    setCollectingIngredient({
-      item,
-      emoji: ingredientEmojis[item],
-      position: {
-        x: npcPos.x + CHARACTER_SIZE / 2,
-        y: npcPos.y + CHARACTER_SIZE / 2,
-      },
-    });
-
-    // Add to inventory after animation
-    setTimeout(() => {
-      setInventory((prev) => [...prev, item]);
-      setLastCollectedItem(item);
-      setCollectingIngredient(null);
-    }, 1000);
-  };
-
-  // Remove ingredient from inventory
-  const removeFromInventory = (itemToRemove) => {
-    setInventory(inventory.filter((item) => item !== itemToRemove));
-  };
-
   // Function to get item description
-  const getItemDescription = (item) => {
+  const getItemDescription = useCallback((item) => {
     const descriptions = {
-      "Daging Sapi": "Daging sapi segar dari Anosheep",
-      Santan: "Santan kelapa murni dari kebun Dinozaurus",
-      Cabai: "Cabai merah segar untuk rendang",
-      "Gula Aren": "Gula aren spesial dari Bebi",
+      "Daging Sapi Segar": "Daging sapi segar dari Anosheep",
+      "Santan Kelapa": "Santan kelapa murni dari Dinozaurus",
+      "Cabai Merah": "Cabai merah dari Bebi",
+      Rendang: "Rendang asli Padang yang lezat dan bergizi.",
     };
-    return descriptions[item] || "Bahan untuk membuat rendang";
-  };
+    return descriptions[item] || "Item tidak dikenal";
+  }, []);
 
-  // Function to create a dialog message with speaker
-  const createDialogMessage = (text, speaker, icon = null) => ({
-    text,
-    speaker,
-    icon,
-  });
+  // Add ingredient to inventory with animation
+  const handleCollectIngredient = useCallback(
+    (ingredient) => {
+      setCollectingIngredient(ingredient);
+      setLastCollectedItem(ingredient);
+
+      // Panggil addToInventory dari props (dari Game.js)
+      addToInventory(ingredient);
+
+      setQuestProgress((prev) => {
+        let updatedProgress = { ...prev };
+        if (ingredient === "Daging Sapi Segar")
+          updatedProgress.hasDaging = true;
+        if (ingredient === "Santan Kelapa") updatedProgress.hasSantan = true;
+        if (ingredient === "Cabai Merah") updatedProgress.hasCabai = true;
+        return updatedProgress;
+      });
+
+      // Show collection animation
+      setTimeout(() => {
+        setCollectingIngredient(null);
+      }, 1000);
+    },
+    [addToInventory]
+  );
+
+  // Function to collect Rendang
+  const collectRendang = useCallback(() => {
+    if (rendangCount > 0) {
+      addToInventory("Rendang"); // Panggil addToInventory dari props
+      setRendangCount((prev) => prev - 1);
+      setShowRendang(false); // Sembunyikan Rendang setelah dikumpulkan
+      setShowCongrats(true);
+      setTimeout(() => setShowCongrats(false), 3000);
+    } else {
+      console.log("Rendang sudah habis.");
+    }
+  }, [rendangCount, addToInventory]);
 
   // Update handleDialog for Dinozaurus
   const handleDialog = (npc) => {
@@ -393,7 +414,7 @@ function Padang({ onReturn, stats, updateStats }) {
                     onSelect: (ingredientIndex) => {
                       if (ingredientIndex === 0) {
                         setQuestProgress({ ...questProgress, hasDaging: true });
-                        addToInventory("Daging Sapi");
+                        handleCollectIngredient("Daging Sapi Segar");
                         setCurrentDialog({
                           ...createDialogMessage(
                             npc.dialogs.responses.correct,
@@ -415,7 +436,7 @@ function Padang({ onReturn, stats, updateStats }) {
                                 ...questProgress,
                                 hasDaging: true,
                               });
-                              addToInventory("Daging Sapi");
+                              handleCollectIngredient("Daging Sapi Segar");
                               setCurrentDialog({
                                 ...createDialogMessage(
                                   npc.dialogs.responses.correct,
@@ -475,19 +496,7 @@ function Padang({ onReturn, stats, updateStats }) {
                   setQuestProgress({ ...questProgress, hasSantan: true });
                   // Add santan to inventory with animation from Dinozaurus's position
                   const npcPos = npcs.find((n) => n.name === "Dinozaurus");
-                  setCollectingIngredient({
-                    item: "Santan",
-                    emoji: ingredientEmojis["Santan"],
-                    position: {
-                      x: npcPos.x + CHARACTER_SIZE / 2,
-                      y: npcPos.y + CHARACTER_SIZE / 2,
-                    },
-                  });
-                  setTimeout(() => {
-                    addToInventory("Santan");
-                    setCollectingIngredient(null);
-                  }, 1000);
-
+                  handleCollectIngredient("Santan Kelapa");
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.success, "Dinozaurus"),
                     options: [
@@ -522,19 +531,7 @@ function Padang({ onReturn, stats, updateStats }) {
                             const npcPos = npcs.find(
                               (n) => n.name === "Dinozaurus"
                             );
-                            setCollectingIngredient({
-                              item: "Santan",
-                              emoji: ingredientEmojis["Santan"],
-                              position: {
-                                x: npcPos.x + CHARACTER_SIZE / 2,
-                                y: npcPos.y + CHARACTER_SIZE / 2,
-                              },
-                            });
-                            setTimeout(() => {
-                              addToInventory("Santan");
-                              setCollectingIngredient(null);
-                            }, 1000);
-
+                            handleCollectIngredient("Santan Kelapa");
                             setCurrentDialog({
                               ...createDialogMessage(
                                 npc.dialogs.secondSuccess,
@@ -609,44 +606,33 @@ function Padang({ onReturn, stats, updateStats }) {
                   setQuestProgress({ ...questProgress, hasCabai: true });
                   // Add cabai to inventory with animation from Bebi's position
                   const npcPos = npcs.find((n) => n.name === "Bebi");
-                  setCollectingIngredient({
-                    item: "Cabai",
-                    emoji: ingredientEmojis["Cabai"],
-                    position: {
-                      x: npcPos.x + CHARACTER_SIZE / 2,
-                      y: npcPos.y + CHARACTER_SIZE / 2,
+                  handleCollectIngredient("Cabai Merah");
+                  setCurrentDialog({
+                    ...createDialogMessage(npc.dialogs.success, "Bebi"),
+                    options: ["Terima kasih! Saatnya membuat rendang!"],
+                    onSelect: () => {
+                      setShowDialog(false);
+                      setShowQuizOptions(false);
+                      // Start congratulatory sequence after dialog
+                      setShowCongrats(true);
+                      // Congrats message will show for 3 seconds before cooking starts
+                      setTimeout(() => {
+                        setShowCongrats(false);
+                        setShowCookingAnimation(true);
+                        // Start cooking animation
+                        let progress = 0;
+                        const cookingInterval = setInterval(() => {
+                          progress += 1;
+                          setCookingProgress(progress);
+                          if (progress >= 100) {
+                            clearInterval(cookingInterval);
+                            setShowCookingAnimation(false);
+                            setShowRendang(true);
+                          }
+                        }, 50);
+                      }, 3000);
                     },
                   });
-                  setTimeout(() => {
-                    addToInventory("Cabai");
-                    setCollectingIngredient(null);
-                    setCurrentDialog({
-                      ...createDialogMessage(npc.dialogs.success, "Bebi"),
-                      options: ["Terima kasih! Saatnya membuat rendang!"],
-                      onSelect: () => {
-                        setShowDialog(false);
-                        setShowQuizOptions(false);
-                        // Start congratulatory sequence after dialog
-                        setShowCongrats(true);
-                        // Congrats message will show for 3 seconds before cooking starts
-                        setTimeout(() => {
-                          setShowCongrats(false);
-                          setShowCookingAnimation(true);
-                          // Start cooking animation
-                          let progress = 0;
-                          const cookingInterval = setInterval(() => {
-                            progress += 1;
-                            setCookingProgress(progress);
-                            if (progress >= 100) {
-                              clearInterval(cookingInterval);
-                              setShowCookingAnimation(false);
-                              setShowRendang(true);
-                            }
-                          }, 50);
-                        }, 3000);
-                      },
-                    });
-                  }, 1000);
                 } else {
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.wrong, "Bebi"),
@@ -701,61 +687,44 @@ function Padang({ onReturn, stats, updateStats }) {
     }
   }, [currentDialog.text, showDialog, typeText]);
 
-  const handleCollectIngredient = (ingredient) => {
-    setCollectingIngredient(ingredient);
-    setLastCollectedItem(ingredient);
-    setShowOptions(false);
-    setShowDialog(false);
-
-    // Update stats based on ingredient collected
-    switch (ingredient) {
-      case "daging":
-        updateStats({ hunger: stats.hunger + 10 });
-        break;
-      case "santan":
-        updateStats({ happiness: stats.happiness + 5 });
-        break;
-      case "cabai":
-        updateStats({ happiness: stats.happiness + 5 });
-        break;
-      default:
-        break;
-    }
-
-    // Update quest progress
+  // Sync questProgress with inventory whenever inventory changes
+  useEffect(() => {
     setQuestProgress((prev) => ({
       ...prev,
-      hasDaging: ingredient === "daging" ? true : prev.hasDaging,
-      hasSantan: ingredient === "santan" ? true : prev.hasSantan,
-      hasCabai: ingredient === "cabai" ? true : prev.hasCabai,
+      hasDaging: prev.hasDaging || inventory.includes("Daging Sapi Segar"),
+      hasSantan: prev.hasSantan || inventory.includes("Santan Kelapa"),
+      hasCabai: prev.hasCabai || inventory.includes("Cabai Merah"),
     }));
+  }, [inventory]);
 
-    // Add to inventory
-    const newItem = {
-      id: Date.now(),
-      name: ingredient,
-      image: `/Picture/${ingredient}.png`,
-    };
-    setInventory((prev) => [...prev, newItem]);
+  // Save questProgress to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("padangQuestProgress", JSON.stringify(questProgress));
+  }, [questProgress]);
 
-    // Show collection animation
-    setTimeout(() => {
-      setCollectingIngredient(null);
-    }, 1000);
-  };
+  // Effect to show Rendang if all ingredients are collected
+  useEffect(() => {
+    const allIngredientsCollected =
+      inventory.includes("Daging Sapi Segar") &&
+      inventory.includes("Santan Kelapa") &&
+      inventory.includes("Cabai Merah");
 
-  const handleCookingComplete = () => {
-    setShowCookingAnimation(false);
-    setShowRendang(true);
-    setShowCongrats(true);
-    updateStats({
-      happiness: stats.happiness + 20,
-      hunger: stats.hunger + 30,
-    });
-    setTimeout(() => {
-      setShowCongrats(false);
-    }, 3000);
-  };
+    if (allIngredientsCollected) {
+      if (rendangCount > 0) {
+        setShowRendang(true);
+        setRendangPosition({ x: 60, y: 40 });
+      } else {
+        setShowRendang(false);
+      }
+    }
+  }, [inventory, rendangCount]);
+
+  // Function to create a dialog message with speaker
+  const createDialogMessage = (text, speaker, icon = null) => ({
+    text,
+    speaker,
+    icon,
+  });
 
   return (
     <div
@@ -1200,10 +1169,12 @@ function Padang({ onReturn, stats, updateStats }) {
         </div>
       )}
 
-      {/* Rendang Collectible */}
-      {showRendang && (
-        <div
-          className="rendang"
+      {/* Rendang */}
+      {showRendang && rendangCount > 0 && (
+        <img
+          src="/Picture/item_rendang.png"
+          alt="Rendang"
+          onClick={collectRendang}
           style={{
             position: "absolute",
             left: `${rendangPosition.x}%`,
@@ -1212,14 +1183,7 @@ function Padang({ onReturn, stats, updateStats }) {
             cursor: "pointer",
             zIndex: 1000,
           }}
-          onClick={() => handleCollectIngredient("rendang")}
-        >
-          <img
-            src="/Picture/rendang.png"
-            alt="Rendang"
-            style={{ width: "100px", height: "100px" }}
-          />
-        </div>
+        />
       )}
 
       <style>

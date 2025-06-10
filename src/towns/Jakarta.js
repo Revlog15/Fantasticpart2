@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
 
-function Jakarta({ onReturn }) {
+function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 400, y: 300 });
@@ -11,10 +11,6 @@ function Jakarta({ onReturn }) {
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
-  const [inventory, setInventory] = useState(() => {
-    const saved = localStorage.getItem("jakartaInventory");
-    return saved ? JSON.parse(saved) : [];
-  });
   const [questProgress, setQuestProgress] = useState(() => {
     const saved = localStorage.getItem("jakartaProgress");
     return saved
@@ -36,18 +32,6 @@ function Jakarta({ onReturn }) {
   const TYPING_SPEED = 30; // milliseconds per character
   const [collectingIngredient, setCollectingIngredient] = useState(null);
   const [lastCollectedItem, setLastCollectedItem] = useState(null);
-  const [stats, setStats] = useState(() => {
-    const saved = localStorage.getItem("gameStats");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          happiness: 100,
-          hunger: 100,
-          hygiene: 100,
-          sleep: 100,
-          gold: 0,
-        };
-  });
   const [showCookingAnimation, setShowCookingAnimation] = useState(false);
   const [showKerakTelor, setShowKerakTelor] = useState(false);
   const [kerakTelorPosition, setKerakTelorPosition] = useState({
@@ -59,6 +43,10 @@ function Jakarta({ onReturn }) {
   const [nearSign, setNearSign] = useState(null);
   const [showSignDetails, setShowSignDetails] = useState(false);
   const SIGN_DETECTION_RADIUS = 80;
+  const [kerakTelorCount, setKerakTelorCount] = useState(() => {
+    const savedCount = localStorage.getItem("kerakTelorCount");
+    return savedCount ? parseInt(savedCount, 10) : 3;
+  });
 
   const selectedCharacter =
     localStorage.getItem("selectedCharacter") || "revlog";
@@ -411,57 +399,57 @@ function Jakarta({ onReturn }) {
     "Kerak Telor": "🥘",
   };
 
-  // Add ingredient to inventory with animation
-  const addToInventory = (item) => {
-    // Get NPC position for animation start point
-    const npcPos = npcs.find(
-      (n) =>
-        ((item === "Telur Bebek" || item === "Telur Ayam") &&
-          n.name === "Anosheep") ||
-        ((item === "Beras" || item === "Bumbu") && n.name === "Dinozaurus") ||
-        (item === "Gula Aren" && n.name === "Bebi")
-    );
-
-    // Show collection animation
-    if (npcPos) {
-      setCollectingIngredient({
-        item,
-        emoji: ingredientEmojis[item],
-        position: {
-          x: npcPos.x + CHARACTER_SIZE / 2,
-          y: npcPos.y + CHARACTER_SIZE / 2,
-        },
-      });
-    }
-
-    // Add to inventory after animation
-    setTimeout(() => {
-      setInventory((prev) => {
-        const newInventory = [...prev, item];
-        localStorage.setItem("jakartaInventory", JSON.stringify(newInventory)); // simpan langsung!
-        return newInventory;
-      });
-      setLastCollectedItem(item);
-      setCollectingIngredient(null);
-    }, 1000);
-  };
-
-  // Remove ingredient from inventory
-  const removeFromInventory = (itemToRemove) => {
-    setInventory(inventory.filter((item) => item !== itemToRemove));
-  };
-
   // Function to get item description
-  const getItemDescription = (item) => {
+  const getItemDescription = useCallback((item) => {
     const descriptions = {
-      Telur: "Telur segar dari Anosheep",
-      Beras: "Beras dari Dinozaurus",
-      Bumbu: "Bumbu dari Dinozaurus",
-      "Gula Aren": "Gula aren spesial dari Bebi",
+      "Telur Bebek": "Telur bebek segar dari Anosheep",
+      "Telur Ayam": "Telur ayam segar dari Anosheep",
+      Nasi: "Beras untuk nasi dari Dinozaurus",
+      Bumbu: "Bumbu tradisional Betawi dari Bebi",
       "Kerak Telor": "Kerak telor yang lezat dan bergizi.",
     };
     return descriptions[item] || "Item tidak dikenal";
-  };
+  }, []);
+
+  // Add ingredient to inventory
+  const handleCollectIngredient = useCallback(
+    (ingredient) => {
+      setCollectingIngredient(ingredient);
+      setLastCollectedItem(ingredient);
+
+      // Panggil addToInventory dari props (dari Game.js)
+      addToInventory(ingredient);
+
+      setQuestProgress((prev) => {
+        let updatedProgress = { ...prev };
+        if (ingredient === "Telur Bebek" || ingredient === "Telur Ayam")
+          updatedProgress.hasTelur = true;
+        if (ingredient === "Nasi") updatedProgress.hasNasi = true;
+        if (ingredient === "Bumbu") updatedProgress.hasBumbu = true;
+        return updatedProgress;
+      });
+
+      // Show collection animation
+      setTimeout(() => {
+        setCollectingIngredient(null);
+      }, 1000);
+    },
+    [addToInventory]
+  );
+
+  // Function to collect Kerak Telor
+  const collectKerakTelor = useCallback(() => {
+    if (kerakTelorCount > 0) {
+      addToInventory("Kerak Telor"); // Panggil addToInventory dari props
+      setKerakTelorCount((prev) => prev - 1);
+      setShowKerakTelor(false); // Sembunyikan Kerak Telor setelah dikumpulkan
+      setShowCongrats(true); // Tampilkan pesan selamat
+      // Update stats if needed, or handle in Game.js useItem
+      setTimeout(() => setShowCongrats(false), 3000); // Sembunyikan setelah 3 detik
+    } else {
+      console.log("Kerak Telor sudah habis.");
+    }
+  }, [kerakTelorCount, addToInventory]);
 
   // Function to create a dialog message with speaker
   const createDialogMessage = (text, speaker, icon = null) => ({
@@ -552,7 +540,7 @@ function Jakarta({ onReturn }) {
                           });
                           const eggType =
                             eggOptionIndex === 0 ? "Telur Bebek" : "Telur Ayam";
-                          addToInventory(eggType);
+                          handleCollectIngredient(eggType);
                           setCurrentDialog({
                             ...createDialogMessage(
                               String(npc.dialogs.eggSuccess || "").replace(
@@ -624,16 +612,8 @@ function Jakarta({ onReturn }) {
                   setQuestProgress({ ...questProgress, hasNasi: true });
                   // Add beras to inventory with animation from Dinozaurus' position
                   const npcPos = npcs.find((n) => n.name === "Dinozaurus");
-                  setCollectingIngredient({
-                    item: "Beras",
-                    emoji: ingredientEmojis["Beras"],
-                    position: {
-                      x: npcPos.x + CHARACTER_SIZE / 2,
-                      y: npcPos.y + CHARACTER_SIZE / 2,
-                    },
-                  });
+                  handleCollectIngredient("Beras");
                   setTimeout(() => {
-                    addToInventory("Beras");
                     setCollectingIngredient(null);
                   }, 1000);
 
@@ -676,16 +656,8 @@ function Jakarta({ onReturn }) {
                             const npcPos = npcs.find(
                               (n) => n.name === "Dinozaurus"
                             );
-                            setCollectingIngredient({
-                              item: "Beras",
-                              emoji: ingredientEmojis["Beras"],
-                              position: {
-                                x: npcPos.x + CHARACTER_SIZE / 2,
-                                y: npcPos.y + CHARACTER_SIZE / 2,
-                              },
-                            });
+                            handleCollectIngredient("Beras");
                             setTimeout(() => {
-                              addToInventory("Beras");
                               setCollectingIngredient(null);
                             }, 1000);
 
@@ -774,16 +746,8 @@ function Jakarta({ onReturn }) {
                   setQuestProgress({ ...questProgress, hasBumbu: true });
                   // Add bumbu to inventory with animation from Bebi's position
                   const npcPos = npcs.find((n) => n.name === "Bebi");
-                  setCollectingIngredient({
-                    item: "Bumbu",
-                    emoji: ingredientEmojis["Bumbu"],
-                    position: {
-                      x: npcPos.x + CHARACTER_SIZE / 2,
-                      y: npcPos.y + CHARACTER_SIZE / 2,
-                    },
-                  });
+                  handleCollectIngredient("Bumbu");
                   setTimeout(() => {
-                    addToInventory("Bumbu");
                     setCollectingIngredient(null);
                     setCurrentDialog({
                       ...createDialogMessage(
@@ -886,7 +850,7 @@ function Jakarta({ onReturn }) {
   // Add stat decrease over time
   useEffect(() => {
     const statInterval = setInterval(() => {
-      setStats((prevStats) => ({
+      updateStats((prevStats) => ({
         ...prevStats,
         happiness: Math.max(0, prevStats.happiness - 0.1),
         hunger: Math.max(0, prevStats.hunger - 0.2),
@@ -896,48 +860,29 @@ function Jakarta({ onReturn }) {
     }, 1000);
 
     return () => clearInterval(statInterval);
-  }, []);
+  }, [updateStats]);
 
-  // Function to collect kerak telor
-  const collectKerakTelor = () => {
-    setCollectingIngredient({
-      item: "Kerak Telor",
-      emoji: "🥘",
-      position: kerakTelorPosition,
-    });
+  // Effect to show Kerak Telor if all ingredients are collected
+  useEffect(() => {
+    const allIngredientsCollected =
+      (inventory.includes("Telur Bebek") || inventory.includes("Telur Ayam")) &&
+      inventory.includes("Nasi") &&
+      inventory.includes("Bumbu");
 
-    setTimeout(() => {
-      // Set hunger to 100% and show stat increase animation
-      setStats((prevStats) => ({
-        ...prevStats,
-        hunger: 100,
-      }));
+    if (allIngredientsCollected) {
+      if (kerakTelorCount > 0) {
+        setShowKerakTelor(true);
+        setKerakTelorPosition({ x: 600, y: 400 });
+      } else {
+        setShowKerakTelor(false);
+      }
+    }
+  }, [inventory, kerakTelorCount]);
 
-      // Add floating text animation showing hunger restored
-      const hungerText = document.createElement("div");
-      hungerText.className = "stat-increase";
-      hungerText.textContent = "+Hunger Restored!";
-      hungerText.style.position = "absolute";
-      hungerText.style.left = `${kerakTelorPosition.x}px`;
-      hungerText.style.top = `${kerakTelorPosition.y - 30}px`;
-      document.body.appendChild(hungerText);
-
-      // Remove the floating text after animation
-      setTimeout(() => {
-        hungerText.remove();
-      }, 2000);
-
-      setShowKerakTelor(false);
-      setCollectingIngredient(null);
-      // Ganti seluruh inventory menjadi hanya 'Kerak Telor'
-      setInventory(() => {
-        const newInventory = ["Kerak Telor"];
-        localStorage.setItem("jakartaInventory", JSON.stringify(newInventory));
-        return newInventory;
-      });
-      setLastCollectedItem("Kerak Telor");
-    }, 1000);
-  };
+  // Save progress to localStorage
+  useEffect(() => {
+    localStorage.setItem("jakartaProgress", JSON.stringify(questProgress));
+  }, [questProgress]);
 
   const handleSignInteraction = () => {
     if (nearSign) {
@@ -951,7 +896,7 @@ function Jakarta({ onReturn }) {
 
   const handleActivity = (activity) => {
     if (activity.statsEffect) {
-      setStats((prevStats) => {
+      updateStats((prevStats) => {
         const newStats = { ...prevStats };
         Object.entries(activity.statsEffect).forEach(([stat, value]) => {
           if (stat === "gold") {
@@ -970,8 +915,9 @@ function Jakarta({ onReturn }) {
   // Load ulang inventory & progress dari localStorage setiap kali window focus (masuk ke map Jakarta)
   useEffect(() => {
     function reloadFromStorage() {
-      const savedInventory = localStorage.getItem("jakartaInventory");
-      if (savedInventory) setInventory(JSON.parse(savedInventory));
+      // Inventory di Game.js
+      // const savedInventory = localStorage.getItem("jakartaInventory");
+      // if (savedInventory) setInventory(JSON.parse(savedInventory));
       const savedProgress = localStorage.getItem("jakartaProgress");
       if (savedProgress) setQuestProgress(JSON.parse(savedProgress));
     }
@@ -981,25 +927,26 @@ function Jakarta({ onReturn }) {
   }, []);
 
   // Simpan inventory ke localStorage setiap kali berubah
-  useEffect(() => {
-    localStorage.setItem("jakartaInventory", JSON.stringify(inventory));
-  }, [inventory]);
+  // useEffect(() => {
+  //   localStorage.setItem("jakartaInventory", JSON.stringify(inventory));
+  // }, [inventory]);
 
   // Simpan progress ke localStorage setiap kali berubah
-  useEffect(() => {
-    localStorage.setItem("jakartaProgress", JSON.stringify(questProgress));
-  }, [questProgress]);
+  // useEffect(() => {
+  //   localStorage.setItem("jakartaProgress", JSON.stringify(questProgress));
+  // }, [questProgress]);
 
   // Simpan stats ke localStorage setiap kali berubah (hanya ke gameStats)
-  useEffect(() => {
-    localStorage.setItem("gameStats", JSON.stringify(stats));
-  }, [stats]);
+  // useEffect(() => {
+  //   localStorage.setItem("gameStats", JSON.stringify(stats));
+  // }, [stats]);
 
   // Load ulang stats dari localStorage setiap kali window focus (masuk ke map Jakarta)
   useEffect(() => {
     function reloadStats() {
-      const saved = localStorage.getItem("gameStats");
-      if (saved) setStats(JSON.parse(saved));
+      // Stats di Game.js
+      // const saved = localStorage.getItem("gameStats");
+      // if (saved) setStats(JSON.parse(saved));
     }
     reloadStats();
     window.addEventListener("focus", reloadStats);
@@ -1009,8 +956,9 @@ function Jakarta({ onReturn }) {
   // Sinkronisasi stat bar dengan localStorage gameStats setiap 200ms
   useEffect(() => {
     const interval = setInterval(() => {
-      const saved = localStorage.getItem("gameStats");
-      if (saved) setStats(JSON.parse(saved));
+      // Stats di Game.js
+      // const saved = localStorage.getItem("gameStats");
+      // if (saved) setStats(JSON.parse(saved));
     }, 200); // 0.2 detik
     return () => clearInterval(interval);
   }, []);
@@ -1029,6 +977,10 @@ function Jakarta({ onReturn }) {
       setNearKerakTelor(false);
     }
   }, [position, showKerakTelor, kerakTelorPosition]);
+
+  useEffect(() => {
+    localStorage.setItem("kerakTelorCount", kerakTelorCount.toString());
+  }, [kerakTelorCount]);
 
   return (
     <div
@@ -1505,70 +1457,21 @@ function Jakarta({ onReturn }) {
         </div>
       )}
 
-      {/* Kerak Telor Collectible */}
-      {showKerakTelor && (
-        <>
-          <div
-            style={{
-              position: "absolute",
-              left: `${kerakTelorPosition.x}px`,
-              top: `${kerakTelorPosition.y}px`,
-              fontSize: "40px",
-              animation: "float 2s ease-in-out infinite",
-              zIndex: 95,
-              filter: "drop-shadow(0 0 10px gold)",
-              textShadow: "0 0 20px gold",
-              pointerEvents: "none",
-            }}
-          >
-            <div className="kerak-telor-glow"></div>
-            🥘
-          </div>
-          {nearKerakTelor && (
-            <button
-              style={{
-                position: "absolute",
-                left: `${kerakTelorPosition.x - 40}px`,
-                top: `${kerakTelorPosition.y - 60}px`,
-                zIndex: 100,
-                background: "#ffd700",
-                color: "#222",
-                border: "2px solid #222",
-                borderRadius: "8px",
-                padding: "8px 20px",
-                fontWeight: "bold",
-                fontSize: "16px",
-                cursor: "pointer",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              }}
-              onClick={collectKerakTelor}
-            >
-              Ambil Kerak Telor
-            </button>
-          )}
-          {nearKerakTelor && (
-            <div
-              style={{
-                position: "absolute",
-                left: `${kerakTelorPosition.x - 75}px`,
-                top: `${kerakTelorPosition.y - 140}px`,
-                zIndex: 101,
-                color: "#fff",
-                background: "rgba(0,0,0,0.7)",
-                padding: "6px 14px",
-                borderRadius: "8px",
-                border: "1px solid #ffd700",
-                fontSize: "15px",
-                textAlign: "center",
-                maxWidth: "250px",
-                pointerEvents: "none",
-              }}
-            >
-              Dekati kerak telor, lalu klik tombol <b>Ambil Kerak Telor</b>{" "}
-              untuk mengambilnya!
-            </div>
-          )}
-        </>
+      {/* Kerak Telor */}
+      {showKerakTelor && kerakTelorCount > 0 && (
+        <img
+          src="/Picture/item_keraktelor.png"
+          alt="Kerak Telor"
+          onClick={collectKerakTelor}
+          style={{
+            position: "absolute",
+            left: `${kerakTelorPosition.x}px`,
+            top: `${kerakTelorPosition.y}px`,
+            width: "100px",
+            height: "100px",
+            cursor: "pointer",
+          }}
+        />
       )}
 
       {/* Sign Interaction Button */}

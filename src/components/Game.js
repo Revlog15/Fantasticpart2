@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "../styles/Game.css";
 
 // Import town components (assuming these paths are correct)
@@ -50,7 +50,10 @@ function Game() {
   });
 
   // Add inventory state
-  const [inventory, setInventory] = useState([]);
+  const [inventory, setInventory] = useState(() => {
+    const savedInventory = localStorage.getItem("gameInventory");
+    return savedInventory ? JSON.parse(savedInventory) : [];
+  });
   const [showInventory, setShowInventory] = useState(false);
   const [currentTown, setCurrentTown] = useState(null);
   const [showExploreButton, setShowExploreButton] = useState(false);
@@ -60,6 +63,11 @@ function Game() {
   const [finalScore, setFinalScore] = useState(0);
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const [showOptions, setShowOptions] = useState(false);
+  const typingIntervalRef = useRef(null);
+  const TYPING_SPEED = 30; // milliseconds per character
 
   console.log("Initial Character Image:", `${selectedCharacter}-idle`); // Debug log
   console.log("Full Image Path:", `/Picture/${selectedCharacter}-idle.png`); // Debug log
@@ -67,8 +75,13 @@ function Game() {
   // Ref for the game container to get its dimensions
   const gameContainerRef = useRef(null);
 
+  // Save inventory to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("gameInventory", JSON.stringify(inventory));
+  }, [inventory]);
+
   // Update stats with limits
-  const updateStats = () => {
+  const updateStats = useCallback(() => {
     setStats((prevStats) => {
       const newStats = {
         ...prevStats,
@@ -81,16 +94,19 @@ function Game() {
       localStorage.setItem("gameStats", JSON.stringify(newStats));
       return newStats;
     });
-  };
+  }, [setStats]); // setStats is a stable dispatch function
 
   // Function to update specific stats
-  const updateSpecificStats = (newStats) => {
-    setStats((prevStats) => ({
-      ...prevStats,
-      ...newStats,
-    }));
-    updateStats();
-  };
+  const updateSpecificStats = useCallback(
+    (newStats) => {
+      setStats((prevStats) => ({
+        ...prevStats,
+        ...newStats,
+      }));
+      updateStats();
+    },
+    [setStats, updateStats]
+  ); // updateStats is now memoized
 
   // Game actions
   const work = () => {
@@ -220,25 +236,25 @@ function Game() {
   const signs = [
     {
       id: 1,
-      x: 27,
-      y: 67,
-      name: "Town Hall",
+      x: 21,
+      y: 87,
+      name: "UMN",
       description:
         "The central administrative building of the town. Here you can find important information and quests.",
     },
     {
       id: 2,
-      x: 85,
-      y: 52,
-      name: "Market",
+      x: 62,
+      y: 32,
+      name: "GLORA BUNG KARNO",
       description:
-        "A bustling marketplace where you can buy and sell items. Various merchants offer their wares here.",
+        "Jantung olahraga dan kebugaran bangsa! Di kompleks yang luas ini, kamu bisa berlari di trek atletik, melatih fisik, atau sekadar berjalan santai untuk meningkatkan Happiness. Siapa tahu kamu bisa bertemu seorang atlet terkenal yang butuh bantuan?",
     },
     {
       id: 3,
-      x: 87,
-      y: 24,
-      name: "Training Ground",
+      x: 61,
+      y: 71,
+      name: "Danau TOBA",
       description:
         "A place to train and improve your skills. Various training facilities are available for different abilities.",
     },
@@ -274,8 +290,12 @@ function Game() {
                   options: ["Kota apa saja yang bisa saya kunjungi?"],
                   onSelect: () => ({
                     text: "Kamu bisa mengunjungi:\n1. Jakarta (Kota Awal)\n2. Padang (Rendang)\n3. Papua (Papeda)\n4. Magelang\n\nUntuk membuka kota baru, kamu bisa:\n1. Mengumpulkan emas dan membelinya\n2. Atau menyelesaikan quest di kota sebelumnya",
-                    options: ["Terima kasih atas informasinya!"],
-                    onSelect: () => setShowDialog(false),
+                    options: ["Bagaimana cara menaikkan stats saya?"],
+                    onSelect: () => ({
+                      text: "Rumah adalah tempat terbaik untuk menaikkan stats kamu! Di sana kamu bisa:\n1. Tidur untuk mengembalikan Sleep\n2. Mandi untuk meningkatkan Hygiene\n3. Makan untuk mengembalikan Hunger\n4. Bermain untuk meningkatkan Happiness\n\nJangan lupa untuk selalu kembali ke rumah secara berkala untuk menjaga stats kamu tetap tinggi!",
+                      options: ["Terima kasih atas informasinya!"],
+                      onSelect: () => setShowDialog(false),
+                    }),
                   }),
                 }),
               }),
@@ -471,17 +491,62 @@ function Game() {
     setShowInventory(!showInventory);
   };
 
-  // Function to add item to inventory (placeholder)
-  const addToInventory = (item) => {
-    setInventory((prevInventory) => [...prevInventory, item]);
-  };
+  // Function to add item to inventory
+  const addToInventory = useCallback(
+    (item) => {
+      setInventory((prev) => {
+        const newInventory = [...prev, item];
+        return newInventory;
+      });
+    },
+    [setInventory]
+  );
 
-  // Function to remove item from inventory (placeholder)
-  const removeFromInventory = (index) => {
-    setInventory((prevInventory) =>
-      prevInventory.filter((_, i) => i !== index)
-    );
-  };
+  // Function to remove item from inventory
+  const removeFromInventory = useCallback(
+    (index) => {
+      setInventory((prev) => prev.filter((_, i) => i !== index));
+    },
+    [setInventory]
+  );
+
+  // Function to use item from inventory
+  const handleUseItem = useCallback(
+    (item) => {
+      console.log("Menggunakan item:", item); // Baris baru untuk debug
+      switch (item) {
+        case "Papeda":
+          updateSpecificStats({
+            happiness: Math.min(100, stats.happiness + 30),
+            hunger: Math.min(100, stats.hunger + 40),
+          });
+          // Ensure the correct index is passed to removeFromInventory
+          const indexToRemove = inventory.indexOf(item);
+          if (indexToRemove > -1) {
+            removeFromInventory(indexToRemove);
+          }
+          setShowDialog(true);
+          setCurrentDialog({
+            text: "Papeda dimakan! Happiness +30, Hunger +40",
+            options: ["OK"],
+            onSelect: () => setShowDialog(false),
+          });
+          break;
+        // Add more cases for other items here
+        default:
+          break;
+      }
+    },
+    [
+      updateSpecificStats,
+      stats.happiness,
+      stats.hunger,
+      removeFromInventory,
+      inventory,
+      setShowDialog,
+      setCurrentDialog,
+    ]
+  );
 
   // Function to explore town
   const exploreTown = (townId) => {
@@ -560,74 +625,112 @@ function Game() {
 
   // Function to handle NPC dialog
   const handleDialog = (npc) => {
-    // Fungsi untuk membuat dan menampilkan langkah dialog
-    const displayDialogStep = (dialogData) => {
-      // Pastikan options selalu array untuk mencegah error rendering
-      if (!Array.isArray(dialogData.options)) {
-        console.error("Dialog options is not an array:", dialogData.options);
-        setShowDialog(false); // Sembunyikan dialog jika ada data yang salah
-        return;
+    setShowDialog(true);
+    setCurrentDialog({
+      text: npc.dialogs.initial[0],
+      speaker: "El Pemandu",
+      options: npc.dialogs.options,
+      onSelect: (option) => {
+        if (option === 0) {
+          // If player wants to learn
+          setCurrentDialog({
+            text: "Baik, mari kita mulai dengan hal yang paling penting:",
+            speaker: "El Pemandu",
+            options: ["Lanjutkan"],
+            onSelect: () => {
+              setCurrentDialog({
+                text: "Perhatikan stats kamu (Happiness, Hunger, Sleep, Hygiene). Jangan biarkan salah satu dari stats tersebut mencapai 0, karena itu akan menyebabkan GAME OVER!",
+                speaker: "El Pemandu",
+                options: ["Mengerti, apa lagi?"],
+                onSelect: () => {
+                  setCurrentDialog({
+                    text: "Kota awal kamu adalah Jakarta. Di sana kamu bisa belajar membuat Kerak Telor. Setiap kota memiliki makanan khasnya sendiri yang bisa kamu pelajari.",
+                    speaker: "El Pemandu",
+                    options: ["Kota apa saja yang bisa saya kunjungi?"],
+                    onSelect: () => {
+                      setCurrentDialog({
+                        text: "Kamu bisa mengunjungi:\n1. Jakarta (Kota Awal)\n2. Padang (Rendang)\n3. Papua (Papeda)\n4. Magelang\n\nUntuk membuka kota baru, kamu bisa:\n1. Mengumpulkan emas dan membelinya\n2. Atau menyelesaikan quest di kota sebelumnya",
+                        speaker: "El Pemandu",
+                        options: ["Bagaimana cara menaikkan stats saya?"],
+                        onSelect: () => {
+                          setCurrentDialog({
+                            text: "Rumah adalah tempat terbaik untuk menaikkan stats kamu! Di sana kamu bisa:\n1. Tidur untuk mengembalikan Sleep\n2. Mandi untuk meningkatkan Hygiene\n3. Makan untuk mengembalikan Hunger\n4. Bermain untuk meningkatkan Happiness\n\nJangan lupa untuk selalu kembali ke rumah secara berkala untuk menjaga stats kamu tetap tinggi!",
+                            speaker: "El Pemandu",
+                            options: ["Terima kasih atas informasinya!"],
+                            onSelect: () => setShowDialog(false),
+                          });
+                        },
+                      });
+                    },
+                  });
+                },
+              });
+            },
+          });
+        } else {
+          // If player declines
+          setCurrentDialog({
+            text: npc.dialogs.responses.decline,
+            speaker: "El Pemandu",
+            options: ["Baik, terima kasih!"],
+            onSelect: () => setShowDialog(false),
+          });
+        }
+      },
+    });
+  };
+
+  // Typing animation effect
+  const typeText = useCallback(
+    (text) => {
+      const textToType = String(text || "");
+      setIsTyping(true);
+      setShowOptions(false);
+      setTypedText("");
+      let currentChar = 0;
+
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
       }
 
-      setCurrentDialog({
-        text: dialogData.text,
-        options: dialogData.options,
-        onSelect: (optionIndex) => {
-          if (dialogData.onSelect) {
-            const nextStepData = dialogData.onSelect(optionIndex);
-            if (nextStepData) {
-              // Jika ada langkah selanjutnya, tampilkan
-              displayDialogStep(nextStepData);
-            } else {
-              // Jika tidak ada, tutup dialog
-              setShowDialog(false);
-              setCurrentDialog(null);
-            }
-          } else {
-            // Tutup dialog jika tidak ada handler onSelect
-            setShowDialog(false);
-            setCurrentDialog(null);
-          }
-        },
-      });
-    };
+      typingIntervalRef.current = setInterval(() => {
+        if (currentChar < textToType.length) {
+          setTypedText(textToType.substring(0, currentChar + 1));
+          currentChar++;
+        } else {
+          clearInterval(typingIntervalRef.current);
+          setIsTyping(false);
+          setShowOptions(true);
+        }
+      }, TYPING_SPEED);
+    },
+    [TYPING_SPEED]
+  );
 
-    // Struktur dialog yang lebih aman
-    const dialogTree = {
-      initial: {
-        text: "Halo! Saya El Pemandu, pemandu perjalananmu. Saya akan membantu kamu memahami cara bermain game ini.",
-        options: ["Ya, saya ingin belajar.", "Tidak, saya sudah tahu."],
-        onSelect: (index) => {
-          if (index === 0) return dialogTree.ask;
-          if (index === 1) return dialogTree.decline;
-        },
-      },
-      ask: {
-        text: "Baik, mari kita mulai dengan hal yang paling penting: Perhatikan stats kamu (Happiness, Hunger, Sleep, Hygiene). Jangan biarkan salah satu dari stats tersebut mencapai 0, karena itu akan menyebabkan GAME OVER!",
-        options: ["Mengerti, apa lagi?"],
-        onSelect: () => dialogTree.explainCities,
-      },
-      explainCities: {
-        text: "Kota awal kamu adalah Jakarta. Di sana kamu bisa belajar membuat Kerak Telor. Setiap kota memiliki makanan khasnya sendiri yang bisa kamu pelajari.",
-        options: ["Kota apa saja yang bisa saya kunjungi?"],
-        onSelect: () => dialogTree.listCities,
-      },
-      listCities: {
-        text: "Kamu bisa mengunjungi:\n1. Jakarta (Kota Awal)\n2. Padang (Rendang)\n3. Papua (Papeda)\n4. Magelang\n\nUntuk membuka kota baru, kamu bisa mengumpulkan emas dan membelinya atau menyelesaikan quest.",
-        options: ["Terima kasih atas informasinya!"],
-        onSelect: () => null, // Opsi terakhir, kembalikan null untuk menutup
-      },
-      decline: {
-        text: "Baik, jika kamu membutuhkan bantuan atau lupa cara bermain, jangan ragu untuk bertanya lagi!",
-        options: ["Baik"],
-        onSelect: () => null, // Opsi terakhir, kembalikan null untuk menutup
-      },
-    };
-
-    setShowDialog(true);
-    // Mulai dialog dari langkah awal
-    displayDialogStep(dialogTree.initial);
+  const handleFastForward = () => {
+    if (isTyping) {
+      clearInterval(typingIntervalRef.current);
+      setTypedText(currentDialog.text);
+      setIsTyping(false);
+      setShowOptions(true);
+    }
   };
+
+  // Update dialog display with animation
+  useEffect(() => {
+    if (currentDialog && currentDialog.text && showDialog) {
+      typeText(currentDialog.text);
+    }
+  }, [currentDialog, showDialog, typeText]);
+
+  // Cleanup typing interval on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Render town component if in a town view
   if (currentTown) {
@@ -662,6 +765,8 @@ function Game() {
           onReturn={returnToMainMap}
           stats={stats}
           updateStats={updateSpecificStats}
+          inventory={inventory}
+          addToInventory={addToInventory}
         />
       </div>
     );
@@ -716,6 +821,8 @@ function Game() {
               onReturn={returnToMainMap}
               stats={stats}
               updateStats={updateSpecificStats}
+              inventory={inventory}
+              addToInventory={addToInventory}
             />
           )}
           {currentTown === "padang" && (
@@ -723,6 +830,8 @@ function Game() {
               onReturn={returnToMainMap}
               stats={stats}
               updateStats={updateSpecificStats}
+              inventory={inventory}
+              addToInventory={addToInventory}
             />
           )}
           {currentTown === "papua" && (
@@ -730,6 +839,8 @@ function Game() {
               onReturn={returnToMainMap}
               stats={stats}
               updateStats={updateSpecificStats}
+              inventory={inventory}
+              addToInventory={addToInventory}
             />
           )}
           {currentTown === "magelang" && (
@@ -928,78 +1039,53 @@ function Game() {
 
           {/* Dialog Box */}
           {showDialog && currentDialog && (
-            <div
-              className="dialog-box"
-              style={{
-                position: "fixed",
-                bottom: "20%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                backgroundColor: "rgba(0, 0, 0, 0.9)",
-                padding: "20px",
-                borderRadius: "10px",
-                border: "2px solid #ffd700",
-                color: "white",
-                width: "80%",
-                maxWidth: "600px",
-                zIndex: 1000,
-                boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
-              }}
-            >
+            <div className="dialog-box">
               <div className="dialog-content">
-                <div
-                  className="dialog-text"
-                  style={{
-                    marginBottom: "15px",
-                    fontSize: "16px",
-                    lineHeight: "1.5",
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {currentDialog.text}
-                </div>
-                <div
-                  className="dialog-options"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "10px",
-                  }}
-                >
-                  {(Array.isArray(currentDialog.options) &&
-                  currentDialog.options.length > 0
-                    ? currentDialog.options
-                    : ["Tutup"]
-                  ).map((option, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        if (currentDialog.onSelect) {
-                          currentDialog.onSelect(index);
-                        } else {
-                          setShowDialog(false);
-                          setCurrentDialog(null);
-                        }
-                      }}
+                {currentDialog.speaker && (
+                  <div
+                    className={`dialog-speaker ${
+                      currentDialog.speaker === "Player"
+                        ? "speaker-player"
+                        : "speaker-npc"
+                    }`}
+                  >
+                    <div
+                      className="speaker-icon"
                       style={{
-                        backgroundColor: "#FFD700",
-                        color: "#222",
-                        border: "3px solid #222",
-                        padding: "14px 24px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "18px",
-                        fontWeight: "bold",
-                        marginBottom: "10px",
-                        zIndex: 2000,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                        width: "100%",
-                        outline: "none",
+                        backgroundImage:
+                          currentDialog.speaker === "Player"
+                            ? `url('/Picture/${selectedCharacter}-idle.png')`
+                            : `url('/Picture/${currentDialog.speaker.toLowerCase()}.png')`,
                       }}
+                    />
+                    {currentDialog.speaker}
+                  </div>
+                )}
+                <div className="dialog-text-container">
+                  <div className="dialog-text">
+                    {typedText}
+                    {isTyping && <span className="dialog-cursor" />}
+                  </div>
+                  {isTyping && (
+                    <button
+                      className="fast-forward-btn"
+                      onClick={handleFastForward}
                     >
-                      {option}
+                      Fast Forward
                     </button>
-                  ))}
+                  )}
+                </div>
+                <div className={`dialog-options ${showOptions ? "show" : ""}`}>
+                  {!isTyping &&
+                    currentDialog.options.map((option, index) => (
+                      <button
+                        key={index}
+                        onClick={() => currentDialog.onSelect(index)}
+                        className="dialog-option"
+                      >
+                        {option}
+                      </button>
+                    ))}
                 </div>
               </div>
             </div>
@@ -1078,6 +1164,139 @@ function Game() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Inventory Modal */}
+      {showInventory && (
+        <div
+          style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(0, 0, 0, 0.95)",
+            padding: "20px",
+            borderRadius: "10px",
+            zIndex: 2000,
+            minWidth: "300px",
+            border: "2px solid #FFD700",
+            boxShadow: "0 0 20px rgba(255, 215, 0, 0.3)",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                color: "#FFD700",
+                textAlign: "center",
+                marginBottom: "20px",
+                fontSize: "24px",
+                textShadow: "0 0 10px rgba(255, 215, 0, 0.5)",
+              }}
+            >
+              Inventory
+            </h2>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                maxHeight: "400px",
+                overflowY: "auto",
+                padding: "10px",
+              }}
+            >
+              {inventory.length === 0 ? (
+                <div
+                  style={{
+                    color: "#888",
+                    textAlign: "center",
+                    padding: "20px",
+                    fontStyle: "italic",
+                  }}
+                >
+                  Inventory kosong
+                </div>
+              ) : (
+                inventory.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px",
+                      background: "rgba(255, 255, 255, 0.1)",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255, 215, 0, 0.3)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "24px",
+                          filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))",
+                        }}
+                      >
+                        {item === "Papeda" ? "🍲" : "📦"}
+                      </span>
+                      <span
+                        style={{
+                          color: "white",
+                          fontSize: "16px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {item}
+                      </span>
+                    </div>
+                    {item === "Papeda" && (
+                      <button
+                        onClick={() => handleUseItem(item)}
+                        style={{
+                          background: "#4CAF50",
+                          color: "white",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        Makan
+                      </button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+            <button
+              onClick={() => setShowInventory(false)}
+              style={{
+                background: "#FFD700",
+                color: "#000",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                marginTop: "20px",
+                width: "100%",
+                fontWeight: "bold",
+                fontSize: "16px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

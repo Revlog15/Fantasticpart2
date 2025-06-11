@@ -81,17 +81,17 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     {
       id: 2,
       name: "Anosheep",
-      x: 850,
-      y: 500,
+      x: 800,
+      y: 600,
       image: "npc_anosheep",
       description: "Penjual telur dan produk unggas terbaik di Pasar Baru.",
       dialogs: {
         initial: ["Halo, ada yang bisa saya bantu?"],
-        withoutQuest: "Maaf, sebaiknya kamu temui Merdeka dulu di pusat kota.",
+        withoutQuest: "mbee (Maaf, sebaiknya kamu temui Merdeka dulu di pusat kota.)",
         playerGreeting:
           "Halo, saya ingin mencari telur. Apakah kamu memilikinya?",
         anosheepResponse:
-          "Ya, saya memiliki beberapa pilihan telur. Mana yang kamu cari?",
+          "mbeeee (Ya, saya memiliki beberapa pilihan telur. Mana yang kamu cari?)",
         question:
           "Apa nama monumen ikonik Jakarta yang dibangun pada masa pemerintahan Presiden Soekarno?",
         options: [
@@ -102,12 +102,12 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         ],
         correct: 0,
         success:
-          "Benar sekali! Monas atau Monumen Nasional adalah ikon Jakarta. Sekarang, telur apa yang kamu inginkan?",
+          "MBEEE!!!! (Benar sekali! Monas atau Monumen Nasional adalah ikon Jakarta. Sekarang, telur apa yang kamu inginkan?)",
         wrong:
-          "Maaf, jawabanmu kurang tepat. Cobalah pelajari lebih banyak tentang sejarah Jakarta.",
+          "mbe.... (Maaf, jawabanmu kurang tepat. Cobalah pelajari lebih banyak tentang sejarah Jakarta.)",
         eggOptions: ["Telur Bebek", "Telur Ayam"],
         eggSuccess:
-          "Pilihan yang bagus! {0} adalah pilihan yang baik untuk kerak telor. Untuk bahan selanjutnya, temui Dinozaurus di Pasar Tanah Abang.",
+          "MBEE!!! (Pilihan yang bagus! {0} adalah pilihan yang baik untuk kerak telor. Untuk bahan selanjutnya, temui Dinozaurus di Pasar Tanah Abang.)",
         eggWrong:
           "Hmm... sepertinya itu bukan telur yang tepat untuk kerak telor. Coba pilih antara telur bebek atau telur ayam?",
       },
@@ -115,7 +115,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     {
       id: 3,
       name: "Dinozaurus",
-      x: 1380,
+      x: 1250,
       y: 160,
       image: "npc_dinozaurus",
       description: "Pedagang beras dan bumbu di Pasar Tanah Abang.",
@@ -396,7 +396,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     "Telur Ayam": "🥚",
     Beras: "🌾",
     Bumbu: "🧂",
-    "Kerak Telor": "🥘",
+    "Kerak Telor": "🍞",
   };
 
   // Function to get item description
@@ -404,7 +404,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     const descriptions = {
       "Telur Bebek": "Telur bebek segar dari Anosheep",
       "Telur Ayam": "Telur ayam segar dari Anosheep",
-      Nasi: "Beras untuk nasi dari Dinozaurus",
+      Beras: "Beras untuk nasi dari Dinozaurus",
       Bumbu: "Bumbu tradisional Betawi dari Bebi",
       "Kerak Telor": "Kerak telor yang lezat dan bergizi.",
     };
@@ -485,6 +485,16 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             });
           },
         });
+      } else {
+        // Show dialog after quest started
+        setCurrentDialog({
+          ...createDialogMessage(
+            "Selamat datang kembali! Teruskan pencarian bahan untuk kerak telor.",
+            "Merdeka"
+          ),
+          options: ["Terima kasih, Kek!"],
+          onSelect: () => setShowDialog(false),
+        });
       }
     } else if (npc.name === "Anosheep") {
       if (!questProgress.hasStartedQuest) {
@@ -511,7 +521,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             setCurrentSpeaker({ name: "Anosheep", type: "npc" });
             setCurrentDialog({
               ...createDialogMessage(
-                "Sebelum kamu mendapatkan telur, jawab dulu pertanyaan dari saya!",
+                "mbee (Sebelum kamu mendapatkan telur, jawab dulu pertanyaan dari saya!)",
                 "Anosheep"
               ),
               options: ["Siap, silakan tanya!"],
@@ -577,7 +587,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         });
       } else {
         setCurrentDialog({
-          text: "Kamu sudah mendapatkan telur dariku. Sekarang carilah bahan lainnya dari Dinozaurus.",
+          text: "mbee (Kamu sudah mendapatkan telur dariku. Sekarang carilah bahan lainnya dari Dinozaurus.)",
           options: ["Baik, terima kasih!"],
           onSelect: () => setShowDialog(false),
         });
@@ -1323,17 +1333,17 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
           <div
             className="ingredient-collect"
             style={{
-              left: `${collectingIngredient.position.x}px`,
-              top: `${collectingIngredient.position.y}px`,
+              left: `${position.x}px`,
+              top: `${position.y}px`,
             }}
           >
-            {collectingIngredient.emoji}
+            {ingredientEmojis[collectingIngredient]}
           </div>
           <div
             className="ingredient-flash"
             style={{
-              left: `${collectingIngredient.position.x - 50}px`,
-              top: `${collectingIngredient.position.y - 50}px`,
+              left: `${position.x - 50}px`,
+              top: `${position.y - 50}px`,
             }}
           />
         </>
@@ -1352,14 +1362,14 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   <div
                     key={index}
                     className={`inventory-item ${
-                      item === lastCollectedItem ? "inventory-item-new" : ""
+                      item.name === lastCollectedItem ? "inventory-item-new" : ""
                     }`}
                   >
                     <div>
                       <h3>
-                        {ingredientEmojis[item]} {item}
+                        {ingredientEmojis[item.name]} {item.name} {item.quantity ? `x${item.quantity}` : ""}
                       </h3>
-                      <p>{getItemDescription(item)}</p>
+                      <p>{getItemDescription(item.name)}</p>
                     </div>
                   </div>
                 ))
@@ -1460,7 +1470,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       {/* Kerak Telor */}
       {showKerakTelor && kerakTelorCount > 0 && (
         <img
-          src="/Picture/item_keraktelor.png"
+          src="/Picture/keraktelor.png"
           alt="Kerak Telor"
           onClick={collectKerakTelor}
           style={{

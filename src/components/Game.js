@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
+import { useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 import "../styles/Game.css";
 
 // Import town components (assuming these paths are correct)
@@ -117,15 +117,20 @@ function Game() {
 
   // Game actions
   const work = () => {
-    setStats((prevStats) => ({
-      ...prevStats,
-      gold: prevStats.gold + 10,
-      happiness: prevStats.happiness - 5,
-      hunger: prevStats.hunger - 10,
-      sleep: prevStats.sleep - 5,
-      hygiene: prevStats.hygiene - 5,
-    }));
-    updateStats();
+    console.log("work function called"); // Debug log
+    setStats((prevStats) => {
+      const newStats = {
+        ...prevStats,
+        gold: prevStats.gold + 70,
+        happiness: prevStats.happiness - 5,
+        hunger: prevStats.hunger - 10,
+        sleep: prevStats.sleep - 5,
+        hygiene: prevStats.hygiene - 5,
+      };
+      console.log("work function updating stats:", newStats); // Debug log
+      return newStats;
+    });
+    // Removed updateStats() call here to avoid double state update
   };
 
   const eat = () => {
@@ -251,7 +256,7 @@ function Game() {
       y: 87,
       name: "UMN",
       description:
-        "The central administrative building of the town. Here you can find important information and quests.",
+        "Universitas Multimedia Nusantara, kampus modern dengan berbagai fasilitas untuk belajar dan beraktivitas.",
     },
     {
       id: 2,
@@ -267,7 +272,7 @@ function Game() {
       y: 71,
       name: "Danau TOBA",
       description:
-        "A place to train and improve your skills. Various training facilities are available for different abilities.",
+        "Danau vulkanik terbesar di Indonesia yang menawarkan pemandangan indah dan berbagai aktivitas air.",
     },
   ];
 
@@ -286,6 +291,7 @@ function Game() {
         ],
         options: [
           "Ya, saya ingin belajar cara bermain.",
+          "Saya ingin membeli akses kota",
           "Tidak, saya sudah tahu.",
         ],
         responses: {
@@ -559,12 +565,54 @@ function Game() {
     ]
   );
 
-  // Function to explore town
-  const exploreTown = (townId) => {
-    // Set the current town state to trigger the town component render
-    setCurrentTown(townId);
+  // Add new state for unlocked towns
+  const [unlockedTowns, setUnlockedTowns] = useState(() => {
+    const saved = localStorage.getItem("unlockedTowns");
+    return saved ? JSON.parse(saved) : { jakarta: true, home: true }; // Jakarta and Home unlocked by default
+  });
 
-    // Store the current position to return to later
+  // Unlock towns based on inventory items (missions completed)
+  useEffect(() => {
+    if (inventory.find((item) => item.name === "Kerak Telor")) {
+      setUnlockedTowns((prev) => ({ ...prev, padang: true }));
+    }
+    if (inventory.find((item) => item.name === "Rendang")) {
+      setUnlockedTowns((prev) => ({ ...prev, papua: true }));
+    }
+  }, [inventory]);
+
+  // Save unlocked towns to localStorage
+  useEffect(() => {
+    localStorage.setItem("unlockedTowns", JSON.stringify(unlockedTowns));
+  }, [unlockedTowns]);
+
+  // Function to check if town is accessible
+  const isTownAccessible = (townId) => {
+    if (townId === "home") return true; // Home is always accessible
+    return unlockedTowns[townId] || false;
+  };
+
+  // Function to unlock town
+  const unlockTown = (townId) => {
+    setUnlockedTowns((prev) => ({
+      ...prev,
+      [townId]: true,
+    }));
+  };
+
+  // Modify exploreTown function
+  const exploreTown = (townId) => {
+    if (!isTownAccessible(townId)) {
+      setShowDialog(true);
+      setCurrentDialog({
+        text: "Kota ini belum terbuka! Kamu perlu:\n1. Menyelesaikan misi di kota sebelumnya, atau\n2. Membeli akses dengan emas\n\nKunjungi El Pemandu untuk informasi lebih lanjut.",
+        speaker: "System",
+        options: ["OK"],
+        onSelect: () => setShowDialog(false),
+      });
+      return;
+    }
+    setCurrentTown(townId);
     localStorage.setItem(
       "returnPosition",
       JSON.stringify({
@@ -574,89 +622,20 @@ function Game() {
     );
   };
 
-  // Function to return to main map
-  const returnToMainMap = () => {
-    setCurrentTown(null);
-    // Return to a safe position on the main map
-    setPosition({ x: 50, y: 50 });
-  };
-
-  const handleCheckOut = () => {
-    if (nearSign) {
-      setShowSignDetails(true);
-    }
-  };
-
-  const closeSignDetails = () => {
-    setShowSignDetails(false);
-    setNearSign(null); // Clear near sign state when modal is closed
-  };
-
-  // Calculate final score
-  const calculateScore = () => {
-    const statsScore =
-      (stats.happiness + stats.hunger + stats.sleep + stats.hygiene) * 2;
-    const goldScore = stats.gold * 5;
-    const dayBonus = gameTime.day * 100;
-    return statsScore + goldScore + dayBonus;
-  };
-
-  // Check for game over condition
-  useEffect(() => {
-    console.log("Game.js: Game Over Effect running. Current stats:", stats); // Debug log
-    if (
-      stats.happiness <= 0 ||
-      stats.hunger <= 0 ||
-      stats.sleep <= 0 ||
-      stats.hygiene <= 0
-    ) {
-      console.log("Game.js: Game Over condition met! Setting showDeathScreen to true."); // Debug log
-      setShowDeathScreen(true);
-      setFinalScore(calculateScore());
-    }
-  }, [stats, calculateScore]); // calculateScore also needs to be in dependencies if it's not stable
-
-  // Function to restart game
-  const restartGame = () => {
-    const initialStats = {
-      happiness: 100,
-      hunger: 100,
-      sleep: 100,
-      hygiene: 100,
-      gold: 0,
-    };
-    setStats(initialStats);
-    localStorage.setItem("gameStats", JSON.stringify(initialStats));
-    setGameTime({
-      hours: 6,
-      minutes: 0,
-      day: 1,
-    });
-    setPosition({ x: 50, y: 50 });
-    setShowDeathScreen(false);
-    console.log("Game.js: restartGame called. Stats reset."); // Debug log
-  };
-
-  // New function to handle returning to character select
-  const handleReturnToCharacterSelect = () => {
-    localStorage.removeItem("gameStats"); // Clear saved stats
-    localStorage.removeItem("gameInventory"); // Clear saved inventory
-    localStorage.removeItem("selectedCharacter"); // Clear selected character
-    localStorage.removeItem("playerName"); // Clear player name
-    navigate('/'); // Navigate to character select
-    console.log("Game.js: handleReturnToCharacterSelect called. localStorage cleared."); // Debug log
-  };
-
-  // Function to handle NPC dialog
+  // Modify handleDialog function for El Pemandu
   const handleDialog = (npc) => {
     setShowDialog(true);
     setCurrentDialog({
-      text: npc.dialogs.initial[0],
+      text: "Halo! Saya El Pemandu, pemandu perjalananmu. Saya akan membantu kamu memahami cara bermain game ini.",
       speaker: "El Pemandu",
-      options: npc.dialogs.options,
+      options: [
+        "Ya, saya ingin belajar cara bermain.",
+        "Saya ingin membeli akses kota",
+        "Tidak, saya sudah tahu.",
+      ],
       onSelect: (option) => {
         if (option === 0) {
-          // If player wants to learn
+          // Original tutorial dialog
           setCurrentDialog({
             text: "Baik, mari kita mulai dengan hal yang paling penting:",
             speaker: "El Pemandu",
@@ -691,10 +670,63 @@ function Game() {
               });
             },
           });
+        } else if (option === 1) {
+          // Town access purchase dialog
+          setCurrentDialog({
+            text: "Saya bisa membantu kamu membeli akses ke kota-kota berikut:\n\n1. Magelang (300 emas)\n\nKota mana yang ingin kamu buka?",
+            speaker: "El Pemandu",
+            options: ["Magelang", "Kembali"],
+            onSelect: (townOption) => {
+              const townPrices = {
+                magelang: 300,
+              };
+              const townNames = {
+                magelang: "Magelang",
+              };
+              const selectedTown = ["magelang", "kembali"][townOption];
+
+              if (townOption === 1) {
+                // Kembali
+                setShowDialog(false);
+                return;
+              }
+
+              if (unlockedTowns[selectedTown]) {
+                setCurrentDialog({
+                  text: `Kamu sudah memiliki akses ke ${townNames[selectedTown]}!`,
+                  speaker: "El Pemandu",
+                  options: ["OK"],
+                  onSelect: () => setShowDialog(false),
+                });
+                return;
+              }
+
+              if (stats.gold >= townPrices[selectedTown]) {
+                setStats((prevStats) => ({
+                  ...prevStats,
+                  gold: prevStats.gold - townPrices[selectedTown],
+                }));
+                unlockTown(selectedTown);
+                setCurrentDialog({
+                  text: `Selamat! Kamu telah membeli akses ke ${townNames[selectedTown]}!`,
+                  speaker: "El Pemandu",
+                  options: ["OK"],
+                  onSelect: () => setShowDialog(false),
+                });
+              } else {
+                setCurrentDialog({
+                  text: `Maaf, emas kamu tidak cukup. Kamu membutuhkan ${townPrices[selectedTown]} emas untuk membuka akses ke ${townNames[selectedTown]}.`,
+                  speaker: "El Pemandu",
+                  options: ["OK"],
+                  onSelect: () => setShowDialog(false),
+                });
+              }
+            },
+          });
         } else {
           // If player declines
           setCurrentDialog({
-            text: npc.dialogs.responses.decline,
+            text: "Baik, jika kamu membutuhkan bantuan atau lupa cara bermain, jangan ragu untuk bertanya lagi!",
             speaker: "El Pemandu",
             options: ["Baik, terima kasih!"],
             onSelect: () => setShowDialog(false),
@@ -759,50 +791,388 @@ function Game() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
     }
   };
 
+  // Function to return to main map
+  const returnToMainMap = () => {
+    setCurrentTown(null);
+    // Return to a safe position on the main map
+    setPosition({ x: 50, y: 50 });
+  };
+
+  // Function to handle returning to character select
+  const handleReturnToCharacterSelect = () => {
+    localStorage.removeItem("gameStats"); // Clear saved stats
+    localStorage.removeItem("gameInventory"); // Clear saved inventory
+    localStorage.removeItem("selectedCharacter"); // Clear selected character
+    localStorage.removeItem("playerName"); // Clear player name
+    navigate("/"); // Navigate to character select
+  };
+
+  // Function to restart game
+  const restartGame = () => {
+    const initialStats = {
+      happiness: 100,
+      hunger: 100,
+      sleep: 100,
+      hygiene: 100,
+      gold: 0,
+    };
+    setStats(initialStats);
+    localStorage.setItem("gameStats", JSON.stringify(initialStats));
+    setGameTime({
+      hours: 6,
+      minutes: 0,
+      day: 1,
+    });
+    setPosition({ x: 50, y: 50 });
+    setShowDeathScreen(false);
+  };
+
+  // Function to handle sign interaction
+  const handleCheckOut = () => {
+    if (nearSign) {
+      if (nearSign.name === "GLORA BUNG KARNO") {
+        setShowDialog(true);
+        setCurrentDialog({
+          text: "Selamat Datang di Gelora Bung Karno\n\nSebuah area publik untuk berbagai aktivitas fisik dan rekreasi.\n\nAktivitas yang tersedia:\n1. Jogging\n2. Bersantai\n\n⚠️ Perhatian: Beraktivitas di sini dapat menurunkan stat Hygiene.",
+          speaker: "Gelora Bung Karno",
+          options: ["Jogging", "Bersantai", "Tidak jadi"],
+          onSelect: (option) => {
+            if (option === 0) {
+              // Jogging
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 30),
+                hunger: Math.max(0, prevStats.hunger - 20),
+                hygiene: Math.max(0, prevStats.hygiene - 20),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah melakukan jogging!\n\nEfek:\n• Happiness +30\n• Hunger -20\n• Hygiene -20",
+                speaker: "Gelora Bung Karno",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 1) {
+              // Bersantai
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 10),
+                hunger: Math.max(0, prevStats.hunger - 5),
+                hygiene: Math.max(0, prevStats.hygiene - 5),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah bersantai!\n\nEfek:\n• Happiness +10\n• Hunger -5\n• Hygiene -5",
+                speaker: "Gelora Bung Karno",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 2) {
+              // Tidak jadi
+              setShowDialog(false);
+              setNearSign(null);
+            }
+          },
+        });
+      } else if (nearSign.name === "Danau TOBA") {
+        setShowDialog(true);
+        setCurrentDialog({
+          text: "Selamat Datang di Danau Toba\n\nDanau vulkanik terbesar di Indonesia yang menawarkan pemandangan indah dan berbagai aktivitas air.\n\nAktivitas yang tersedia:\n1. Berenang\n2. Memancing\n3. Menikmati Pemandangan\n\n⚠️ Perhatian: Berenang dapat menurunkan stat Hygiene.",
+          speaker: "Danau Toba",
+          options: [
+            "Berenang",
+            "Memancing",
+            "Menikmati Pemandangan",
+            "Tidak jadi",
+          ],
+          onSelect: (option) => {
+            if (option === 0) {
+              // Berenang
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 25),
+                hunger: Math.max(0, prevStats.hunger - 15),
+                hygiene: Math.max(0, prevStats.hygiene - 10),
+                sleep: Math.max(0, prevStats.sleep - 5),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah berenang di Danau Toba!\n\nEfek:\n• Happiness +25\n• Hunger -15\n• Hygiene -10\n• Sleep -5",
+                speaker: "Danau Toba",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 1) {
+              // Memancing
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 15),
+                hunger: Math.max(0, prevStats.hunger - 10),
+                sleep: Math.max(0, prevStats.sleep - 5),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah memancing di Danau Toba!\n\nEfek:\n• Happiness +15\n• Hunger -10\n• Sleep -5",
+                speaker: "Danau Toba",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 2) {
+              // Menikmati Pemandangan
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 20),
+                sleep: Math.max(0, prevStats.sleep + 10),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah menikmati pemandangan Danau Toba!\n\nEfek:\n• Happiness +20\n• Sleep +10",
+                speaker: "Danau Toba",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 3) {
+              // Tidak jadi
+              setShowDialog(false);
+              setNearSign(null);
+            }
+          },
+        });
+      } else if (nearSign.name === "UMN") {
+        setShowDialog(true);
+        setCurrentDialog({
+          text: "Selamat Datang di Universitas Multimedia Nusantara\n\nKampus modern dengan berbagai fasilitas untuk belajar dan beraktivitas.\n\nAktivitas yang tersedia:\n1. Belajar di Perpustakaan\n2. Makan di Kantin\n3. Olahraga di Lapangan\n\n⚠️ Perhatian: Belajar dapat menurunkan stat Sleep.",
+          speaker: "UMN",
+          options: [
+            "Belajar di Perpustakaan",
+            "Makan di Kantin",
+            "Olahraga di Lapangan",
+            "Tidak jadi",
+          ],
+          onSelect: (option) => {
+            if (option === 0) {
+              // Belajar di Perpustakaan
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 15),
+                hunger: Math.max(0, prevStats.hunger - 10),
+                sleep: Math.max(0, prevStats.sleep - 20),
+                hygiene: Math.max(0, prevStats.hygiene - 5),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah belajar di perpustakaan!\n\nEfek:\n• Happiness +15\n• Hunger -10\n• Sleep -20\n• Hygiene -5",
+                speaker: "UMN",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 1) {
+              // Makan di Kantin
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 10),
+                hunger: Math.min(100, prevStats.hunger + 30),
+                hygiene: Math.max(0, prevStats.hygiene - 5),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah makan di kantin!\n\nEfek:\n• Happiness +10\n• Hunger +30\n• Hygiene -5",
+                speaker: "UMN",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 2) {
+              // Olahraga di Lapangan
+              setStats((prevStats) => ({
+                ...prevStats,
+                happiness: Math.min(100, prevStats.happiness + 20),
+                hunger: Math.max(0, prevStats.hunger - 15),
+                sleep: Math.max(0, prevStats.sleep - 10),
+                hygiene: Math.max(0, prevStats.hygiene - 15),
+              }));
+              setCurrentDialog({
+                text: "Kamu telah berolahraga di lapangan!\n\nEfek:\n• Happiness +20\n• Hunger -15\n• Sleep -10\n• Hygiene -15",
+                speaker: "UMN",
+                options: ["OK"],
+                onSelect: () => {
+                  setShowDialog(false);
+                  setNearSign(null);
+                },
+              });
+            } else if (option === 3) {
+              // Tidak jadi
+              setShowDialog(false);
+              setNearSign(null);
+            }
+          },
+        });
+      } else {
+        setShowSignDetails(true);
+      }
+    }
+  };
+
+  const closeSignDetails = () => {
+    setShowSignDetails(false);
+    setNearSign(null); // Clear near sign state when modal is closed
+  };
+
+  // Calculate final score
+  const calculateScore = () => {
+    const statsScore =
+      (stats.happiness + stats.hunger + stats.sleep + stats.hygiene) * 2;
+    const goldScore = stats.gold * 5;
+    const dayBonus = gameTime.day * 100;
+    return statsScore + goldScore + dayBonus;
+  };
+
+  // Check for game over condition
+  useEffect(() => {
+    if (
+      stats.happiness <= 0 ||
+      stats.hunger <= 0 ||
+      stats.sleep <= 0 ||
+      stats.hygiene <= 0
+    ) {
+      setShowDeathScreen(true);
+      setFinalScore(calculateScore());
+    }
+  }, [stats, calculateScore]);
+
   // Render town component if in a town view
   if (currentTown) {
-    if (currentTown === "home") {
-      return (
-        <div
-          className="town-container"
-          style={{ position: "relative", width: "100%", height: "100vh" }}
-        >
-          <Home
+    switch (currentTown) {
+      case "jakarta":
+        return (
+          <Jakarta
             onReturn={returnToMainMap}
             stats={stats}
-            updateStats={updateSpecificStats}
-            work={work}
-            eat={eat}
-            sleep={sleep}
+            updateStats={updateStats}
+            inventory={inventory}
+            addToInventory={(item, quantity = 1) => {
+              setInventory((prev) => {
+                const newInventory = [...prev];
+                const existingItem = newInventory.find((i) => i.name === item);
+                if (existingItem) {
+                  existingItem.quantity += quantity;
+                } else {
+                  newInventory.push({ name: item, quantity });
+                }
+                return newInventory;
+              });
+            }}
           />
-        </div>
-      );
+        );
+      case "padang":
+        return (
+          <Padang
+            onReturn={returnToMainMap}
+            stats={stats}
+            updateStats={updateStats}
+            inventory={inventory}
+            addToInventory={(item, quantity = 1) => {
+              setInventory((prev) => {
+                const newInventory = [...prev];
+                const existingItem = newInventory.find((i) => i.name === item);
+                if (existingItem) {
+                  existingItem.quantity += quantity;
+                } else {
+                  newInventory.push({ name: item, quantity });
+                }
+                return newInventory;
+              });
+            }}
+          />
+        );
+      case "papua":
+        return (
+          <Papua
+            onReturn={returnToMainMap}
+            stats={stats}
+            updateStats={updateStats}
+            inventory={inventory}
+            addToInventory={(item, quantity = 1) => {
+              setInventory((prev) => {
+                const newInventory = [...prev];
+                const existingItem = newInventory.find((i) => i.name === item);
+                if (existingItem) {
+                  existingItem.quantity += quantity;
+                } else {
+                  newInventory.push({ name: item, quantity });
+                }
+                return newInventory;
+              });
+            }}
+          />
+        );
+      case "magelang":
+        return (
+          <Magelang
+            onReturn={returnToMainMap}
+            stats={stats}
+            updateStats={updateStats}
+            inventory={inventory}
+            addToInventory={(item, quantity = 1) => {
+              setInventory((prev) => {
+                const newInventory = [...prev];
+                const existingItem = newInventory.find((i) => i.name === item);
+                if (existingItem) {
+                  existingItem.quantity += quantity;
+                } else {
+                  newInventory.push({ name: item, quantity });
+                }
+                return newInventory;
+              });
+            }}
+          />
+        );
+      case "home":
+        return (
+      <Home
+        onReturn={returnToMainMap}
+        stats={stats}
+        updateStats={updateSpecificStats}
+        inventory={inventory}
+        addToInventory={(item, quantity = 1) => {
+          setInventory((prev) => {
+            const newInventory = [...prev];
+            const existingItem = newInventory.find((i) => i.name === item);
+            if (existingItem) {
+              existingItem.quantity += quantity;
+            } else {
+              newInventory.push({ name: item, quantity });
+            }
+            return newInventory;
+          });
+        }}
+        work={work}
+        eat={eat}
+        sleep={sleep}
+      />
+        );
+      default:
+        return null;
     }
-
-    const TownComponent = {
-      jakarta: Jakarta,
-      padang: Padang,
-      papua: Papua,
-      magelang: Magelang,
-    }[currentTown];
-
-    return (
-      <div className="town-container">
-        <TownComponent
-          onReturn={returnToMainMap}
-          stats={stats}
-          updateStats={updateSpecificStats}
-          inventory={inventory}
-          addToInventory={addToInventory}
-        />
-      </div>
-    );
   }
 
   // Main game render
@@ -824,7 +1194,10 @@ function Game() {
             <h2>Final Score: {finalScore}</h2>
           </div>
           <div className="game-over-buttons">
-            <button className="game-over-button" onClick={handleReturnToCharacterSelect}>
+            <button
+              className="game-over-button"
+              onClick={handleReturnToCharacterSelect}
+            >
               Return to Character Select
             </button>
             <button className="game-over-button" onClick={restartGame}>
@@ -861,40 +1234,110 @@ function Game() {
             <Jakarta
               onReturn={returnToMainMap}
               stats={stats}
-              updateStats={updateSpecificStats}
+              updateStats={updateStats}
               inventory={inventory}
-              addToInventory={addToInventory}
+              addToInventory={(item, quantity = 1) => {
+                setInventory((prev) => {
+                  const newInventory = [...prev];
+                  const existingItem = newInventory.find(
+                    (i) => i.name === item
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += quantity;
+                  } else {
+                    newInventory.push({ name: item, quantity });
+                  }
+                  return newInventory;
+                });
+              }}
             />
           )}
           {currentTown === "padang" && (
             <Padang
               onReturn={returnToMainMap}
               stats={stats}
-              updateStats={updateSpecificStats}
+              updateStats={updateStats}
               inventory={inventory}
-              addToInventory={addToInventory}
+              addToInventory={(item, quantity = 1) => {
+                setInventory((prev) => {
+                  const newInventory = [...prev];
+                  const existingItem = newInventory.find(
+                    (i) => i.name === item
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += quantity;
+                  } else {
+                    newInventory.push({ name: item, quantity });
+                  }
+                  return newInventory;
+                });
+              }}
             />
           )}
           {currentTown === "papua" && (
             <Papua
               onReturn={returnToMainMap}
               stats={stats}
-              updateStats={updateSpecificStats}
+              updateStats={updateStats}
               inventory={inventory}
-              addToInventory={addToInventory}
+              addToInventory={(item, quantity = 1) => {
+                setInventory((prev) => {
+                  const newInventory = [...prev];
+                  const existingItem = newInventory.find(
+                    (i) => i.name === item
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += quantity;
+                  } else {
+                    newInventory.push({ name: item, quantity });
+                  }
+                  return newInventory;
+                });
+              }}
             />
           )}
           {currentTown === "magelang" && (
-            <Magelang onReturn={returnToMainMap} />
+            <Magelang
+              onReturn={returnToMainMap}
+              stats={stats}
+              updateStats={updateStats}
+              inventory={inventory}
+              addToInventory={(item, quantity = 1) => {
+                setInventory((prev) => {
+                  const newInventory = [...prev];
+                  const existingItem = newInventory.find(
+                    (i) => i.name === item
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += quantity;
+                  } else {
+                    newInventory.push({ name: item, quantity });
+                  }
+                  return newInventory;
+                });
+              }}
+            />
           )}
           {currentTown === "home" && (
             <Home
               onReturn={returnToMainMap}
               stats={stats}
-              updateStats={updateSpecificStats}
-              work={work}
-              eat={eat}
-              sleep={sleep}
+              updateStats={updateStats}
+              inventory={inventory}
+              addToInventory={(item, quantity = 1) => {
+                setInventory((prev) => {
+                  const newInventory = [...prev];
+                  const existingItem = newInventory.find(
+                    (i) => i.name === item
+                  );
+                  if (existingItem) {
+                    existingItem.quantity += quantity;
+                  } else {
+                    newInventory.push({ name: item, quantity });
+                  }
+                  return newInventory;
+                });
+              }}
             />
           )}
         </>
@@ -1246,77 +1689,77 @@ function Game() {
                 padding: "10px",
               }}
             >
-              {inventory.length === 0 ? (
-                <div
-                  style={{
-                    color: "#888",
-                    textAlign: "center",
-                    padding: "20px",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Inventory kosong
-                </div>
-              ) : (
-                inventory.map((item, index) => (
+                {inventory.length === 0 ? (
                   <div
-                    key={index}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "12px",
-                      background: "rgba(255, 255, 255, 0.1)",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(255, 215, 0, 0.3)",
+                      color: "#888",
+                      textAlign: "center",
+                      padding: "20px",
+                      fontStyle: "italic",
                     }}
                   >
+                    Inventory kosong
+                  </div>
+                ) : (
+                  inventory.map((item, index) => (
                     <div
+                      key={index}
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
+                        justifyContent: "space-between",
+                        padding: "12px",
+                        background: "rgba(255, 255, 255, 0.1)",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 215, 0, 0.3)",
                       }}
                     >
-                      <span
+                      <div
                         style={{
-                          fontSize: "24px",
-                          filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
                         }}
                       >
-                        {item === "Papeda" ? "🍲" : "📦"}
-                      </span>
-                      <span
-                        style={{
-                          color: "white",
-                          fontSize: "16px",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {item}
-                      </span>
+                        <span
+                          style={{
+                            fontSize: "24px",
+                            filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))",
+                          }}
+                        >
+                          {item.name === "Papeda" ? "🍲" : "📦"}
+                        </span>
+                        <span
+                          style={{
+                            color: "white",
+                            fontSize: "16px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {item.name} {item.quantity ? `x${item.quantity}` : ""}
+                        </span>
+                      </div>
+                      {item.name === "Papeda" && (
+                        <button
+                          onClick={() => handleUseItem(item.name)}
+                          style={{
+                            background: "#4CAF50",
+                            color: "white",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          Makan
+                        </button>
+                      )}
                     </div>
-                    {item === "Papeda" && (
-                      <button
-                        onClick={() => handleUseItem(item)}
-                        style={{
-                          background: "#4CAF50",
-                          color: "white",
-                          border: "none",
-                          padding: "8px 16px",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                          transition: "all 0.2s ease",
-                        }}
-                      >
-                        Makan
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
+                  ))
+                )}
             </div>
             <button
               onClick={() => setShowInventory(false)}

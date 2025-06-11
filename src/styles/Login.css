@@ -1,0 +1,126 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #1a1a1a;
+  font-family: 'PressStart2P', cursive;
+  image-rendering: pixelated;
+  -ms-interpolation-mode: nearest-neighbor;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  
+  /* Background Image */
+  background-image:  url("../../public/Picture/Background_Login.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: grayscale(10%) brightness(0.8);
+}
+
+.login-box {
+  background-color: rgba(34, 34, 34, 0.7);
+  backdrop-filter: blur(4px);
+  border: none;
+  padding: 32px;
+  border-radius: 0;
+  box-shadow:
+    -4px -4px 0 0 #00ff99,
+    4px -4px 0 0 #00ff99,
+    -4px 4px 0 0 #00ff99,
+    4px 4px 0 0 #00ff99,
+    
+    -8px -8px 0 0 #00cc77,
+    8px -8px 0 0 #00cc77,
+    -8px 8px 0 0 #00cc77,
+    8px 8px 0 0 #00cc77;
+
+  text-align: center;
+  color: #00ff99;
+  width: 360px;
+  position: relative;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+.login-box::before,
+.login-box::after {
+  content: none;
+}
+
+.login-box h2 {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: #00ff99;
+  text-shadow: 2px 2px #000;
+}
+
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  background-color: #000;
+  color: #00ff99;
+  border: 2px solid #00ff99;
+  border-radius: 0;
+  font-family: 'PressStart2P', cursive;
+  font-size: 12px;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.input-group input:focus {
+  outline: none;
+  box-shadow: 4px 4px 0 #00ff99;
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #00ff99;
+  color: #000;
+  border: none;
+  cursor: pointer;
+  font-family: 'PressStart2P', cursive;
+  font-size: 14px;
+  margin-top: 16px;
+  box-shadow: 2px 2px 0 #000;
+  transition: none;
+}
+
+.login-button:hover {
+  background-color: #00cc77;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.login-button:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.register-link {
+  margin-top: 24px;
+  font-size: 12px;
+  color: #00ff99;
+}
+
+.register-link a {
+  color: #00ff99;
+  text-decoration: none;
+  font-weight: bold;
+  transition: none;
+}
+
+.register-link a:hover {
+  color: #00cc77;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 12px;
+  margin-bottom: 16px;
+  text-shadow: 1px 1px #000;
+} 

@@ -1045,3 +1045,65 @@
   text-shadow: 0 0 5px #00ff00;
   box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
 }
+
+.logout-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'PressStart2P', cursive;
+  font-size: 12px;
+  z-index: 1000;
+  box-shadow: 2px 2px 0 #000;
+  transition: all 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #ff0000;
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.logout-button:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.game-over-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between buttons */
+  margin-top: 20px;
+  width: 100%;
+  max-width: 300px; /* Limit width for a more compact look */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.game-over-button {
+  padding: 12px;
+  background-color: #00ff99; /* Neon green */
+  color: #000;
+  border: none;
+  cursor: pointer;
+  font-family: 'PressStart2P', cursive;
+  font-size: 14px;
+  box-shadow: 2px 2px 0 #000;
+  transition: none;
+}
+
+.game-over-button:hover {
+  background-color: #00cc77; /* Darker neon green on hover */
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 #000;
+}
+
+.game-over-button:active {
+  transform: translate(0, 0);
+  box-shadow: 2px 2px 0 #000;
+}

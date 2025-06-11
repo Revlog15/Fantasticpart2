@@ -1,4 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebase';
 import "../styles/Game.css";
 
 // Import town components (assuming these paths are correct)
@@ -11,6 +14,7 @@ import Home from "../towns/Home";
 function Game() {
   console.log("Game component is rendering/re-rendering..."); // Debug log at the top
   const CHARACTER_SIZE = 150;
+  const navigate = useNavigate();
 
   // Get selected character and player name from localStorage
   const selectedCharacter =
@@ -31,7 +35,8 @@ function Game() {
   // Character stats
   const [stats, setStats] = useState(() => {
     const savedStats = localStorage.getItem("gameStats");
-    return savedStats
+    console.log("Game.js: Initializing stats. Saved stats:", savedStats); // Debug log
+    const initialStats = savedStats
       ? JSON.parse(savedStats)
       : {
           happiness: 100,
@@ -40,6 +45,8 @@ function Game() {
           hygiene: 100,
           gold: 0,
         };
+    console.log("Game.js: Stats initialized to:", initialStats); // Debug log
+    return initialStats;
   });
 
   // Add time state
@@ -159,6 +166,8 @@ function Game() {
 
   // Apply stat decay every few seconds
   useEffect(() => {
+    if (showDeathScreen) return; // Stop stat decay if game is over
+
     const statDecayInterval = setInterval(() => {
       setStats((prevStats) => ({
         ...prevStats,
@@ -170,12 +179,12 @@ function Game() {
     }, 5000); // Decrease stats every 5 seconds
 
     return () => clearInterval(statDecayInterval);
-  }, []);
+  }, [showDeathScreen]); // Re-run effect if showDeathScreen changes
 
   // Update stats with limits whenever they change
-  useEffect(() => {
-    updateStats();
-  }, [stats]);
+  // useEffect(() => {
+  //   updateStats();
+  // }, [stats]); // Re-run effect if stats change
 
   // Effect to keep positionRef updated with the latest position state
   useEffect(() => {
@@ -184,6 +193,8 @@ function Game() {
 
   // Add time tracking effect
   useEffect(() => {
+    if (showDeathScreen) return; // Stop time tracking if game is over
+
     const timeInterval = setInterval(() => {
       setGameTime((prevTime) => {
         let newMinutes = prevTime.minutes + 1;
@@ -209,7 +220,7 @@ function Game() {
     }, 1000); // Update every second
 
     return () => clearInterval(timeInterval);
-  }, []);
+  }, [showDeathScreen]); // Re-run effect if showDeathScreen changes
 
   // Format time for display
   const formatTime = (hours, minutes) => {
@@ -592,16 +603,18 @@ function Game() {
 
   // Check for game over condition
   useEffect(() => {
+    console.log("Game.js: Game Over Effect running. Current stats:", stats); // Debug log
     if (
       stats.happiness <= 0 ||
       stats.hunger <= 0 ||
       stats.sleep <= 0 ||
       stats.hygiene <= 0
     ) {
+      console.log("Game.js: Game Over condition met! Setting showDeathScreen to true."); // Debug log
       setShowDeathScreen(true);
       setFinalScore(calculateScore());
     }
-  }, [stats]);
+  }, [stats, calculateScore]); // calculateScore also needs to be in dependencies if it's not stable
 
   // Function to restart game
   const restartGame = () => {
@@ -621,6 +634,17 @@ function Game() {
     });
     setPosition({ x: 50, y: 50 });
     setShowDeathScreen(false);
+    console.log("Game.js: restartGame called. Stats reset."); // Debug log
+  };
+
+  // New function to handle returning to character select
+  const handleReturnToCharacterSelect = () => {
+    localStorage.removeItem("gameStats"); // Clear saved stats
+    localStorage.removeItem("gameInventory"); // Clear saved inventory
+    localStorage.removeItem("selectedCharacter"); // Clear selected character
+    localStorage.removeItem("playerName"); // Clear player name
+    navigate('/'); // Navigate to character select
+    console.log("Game.js: handleReturnToCharacterSelect called. localStorage cleared."); // Debug log
   };
 
   // Function to handle NPC dialog
@@ -732,6 +756,15 @@ function Game() {
     };
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   // Render town component if in a town view
   if (currentTown) {
     if (currentTown === "home") {
@@ -790,9 +823,14 @@ function Game() {
           <div className="final-score">
             <h2>Final Score: {finalScore}</h2>
           </div>
-          <button className="restart-button" onClick={restartGame}>
-            Play Again
-          </button>
+          <div className="game-over-buttons">
+            <button className="game-over-button" onClick={handleReturnToCharacterSelect}>
+              Return to Character Select
+            </button>
+            <button className="game-over-button" onClick={restartGame}>
+              Restart with This Character
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -813,6 +851,9 @@ function Game() {
         overflow: "hidden",
       }}
     >
+      <button className="logout-button" onClick={handleLogout}>
+        Keluar
+      </button>
       {currentTown ? (
         // Town components rendering
         <>

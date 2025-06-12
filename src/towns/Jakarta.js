@@ -81,17 +81,18 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     {
       id: 2,
       name: "Anosheep",
-      x: 850,
-      y: 500,
+      x: 800,
+      y: 600,
       image: "npc_anosheep",
       description: "Penjual telur dan produk unggas terbaik di Pasar Baru.",
       dialogs: {
         initial: ["Halo, ada yang bisa saya bantu?"],
-        withoutQuest: "Maaf, sebaiknya kamu temui Merdeka dulu di pusat kota.",
+        withoutQuest:
+          "mbee (Maaf, sebaiknya kamu temui Merdeka dulu di pusat kota.)",
         playerGreeting:
           "Halo, saya ingin mencari telur. Apakah kamu memilikinya?",
         anosheepResponse:
-          "Ya, saya memiliki beberapa pilihan telur. Mana yang kamu cari?",
+          "mbeeee (Ya, saya memiliki beberapa pilihan telur. Mana yang kamu cari?)",
         question:
           "Apa nama monumen ikonik Jakarta yang dibangun pada masa pemerintahan Presiden Soekarno?",
         options: [
@@ -102,12 +103,12 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         ],
         correct: 0,
         success:
-          "Benar sekali! Monas atau Monumen Nasional adalah ikon Jakarta. Sekarang, telur apa yang kamu inginkan?",
+          "MBEEE!!!! (Benar sekali! Monas atau Monumen Nasional adalah ikon Jakarta. Sekarang, telur apa yang kamu inginkan?)",
         wrong:
-          "Maaf, jawabanmu kurang tepat. Cobalah pelajari lebih banyak tentang sejarah Jakarta.",
+          "mbe.... (Maaf, jawabanmu kurang tepat. Cobalah pelajari lebih banyak tentang sejarah Jakarta.)",
         eggOptions: ["Telur Bebek", "Telur Ayam"],
         eggSuccess:
-          "Pilihan yang bagus! {0} adalah pilihan yang baik untuk kerak telor. Untuk bahan selanjutnya, temui Dinozaurus di Pasar Tanah Abang.",
+          "MBEE!!! (Pilihan yang bagus! {0} adalah pilihan yang baik untuk kerak telor. Untuk bahan selanjutnya, temui Dinozaurus di Pasar Tanah Abang.)",
         eggWrong:
           "Hmm... sepertinya itu bukan telur yang tepat untuk kerak telor. Coba pilih antara telur bebek atau telur ayam?",
       },
@@ -115,7 +116,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     {
       id: 3,
       name: "Dinozaurus",
-      x: 1380,
+      x: 1250,
       y: 160,
       image: "npc_dinozaurus",
       description: "Pedagang beras dan bumbu di Pasar Tanah Abang.",
@@ -177,83 +178,81 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     },
   ];
 
-  // Define signs for Jakarta
-  const signs = [
+  // Define signs for Jakarta with relative coordinates
+  const signsRelative = [
     {
       id: 1,
-      x: 0, // Placeholder X coordinate for the fountain (Bundaran HI)
-      y: 210, // Placeholder Y coordinate for the fountain (Bundaran HI)
+      xPercent: 0, // Relative X coordinate for the fountain (Bundaran HI)
+      yPercent: 0.3, // Relative Y coordinate for the fountain (30%)
       name: "Bundaran HI",
       description:
         "Selamat datang di Bundaran Hotel Indonesia, salah satu landmark terkenal di Jakarta.",
       activity: {
-        // Add activity property
         question:
           "Apakah Anda ingin bermain di Bundaran HI dan meningkatkan kebahagiaan?",
         statsEffect: {
-          // Stats to update on 'Yes'
-          happiness: 20, // Increase happiness by 20
-          hunger: -5, // Decrease hunger slightly as playing takes energy
+          happiness: 20,
+          hunger: -5,
         },
       },
     },
-    // Add more signs here as needed
     {
       id: 2,
-      x: 0, // Placeholder coordinate Taman Suropati
-      y: 588, // Placeholder coordinate Taman Suropati
+      xPercent: 0, // Relative coordinate Taman Suropati
+      yPercent: 0.8, // 70%
       name: "Taman Suropati",
       description: "Taman yang indah, tempat yang tepat untuk bersantai.",
       activity: {
-        // Add activity property for Taman Suropati
         question: "Bersantai di Taman Suropati untuk memulihkan energi?",
         statsEffect: {
-          // Stats to update on 'Yes'
-          sleep: 15, // Increase sleep/rest
-          hygiene: 5, // Slightly increase hygiene (fresh air)
-          hunger: -5, // Decrease hunger slightly
+          sleep: 15,
+          hygiene: 5,
+          hunger: -5,
         },
       },
     },
     {
       id: 3,
-      x: 1386, // Placeholder coordinate Kota Tua
-      y: 588, // Placeholder coordinate Kota Tua
+      xPercent: 0.9, // Relative coordinate Kota Tua
+      yPercent: 0.81,
       name: "Kota Tua",
       description:
         "Kunjungi area bersejarah dengan bangunan-bangunan kolonial.",
       activity: {
-        // Add activity property for Kota Tua
         question:
           "Jelajahi Kota Tua dan pelajari sejarah untuk menambah wawasan?",
         statsEffect: {
-          // Stats to update on 'Yes'
-          happiness: 15, // Increase happiness from exploring
-          hunger: -10, // Decrease hunger from walking around
-          sleep: -5, // Decrease sleep slightly
+          happiness: 15,
+          hunger: -10,
+          sleep: -5,
         },
       },
     },
     {
       id: 4,
-      x: 1386, // Placeholder coordinate SCBD
-      y: 213, // Placeholder coordinate SCBD
+      xPercent: 0.9, // Relative coordinate SCBD
+      yPercent: 0.32,
       name: "SCBD",
       description:
         "Kawasan pusat bisnis yang ramai dengan gedung-gedung pencakar langit.",
       activity: {
-        // Add activity property for SCBD
         question: "Cari peluang bisnis di SCBD untuk mendapatkan emas?",
         statsEffect: {
-          // Stats to update on 'Yes'
-          gold: 25, // Increase gold significantly
-          happiness: -5, // Decrease happiness (stressful)
-          sleep: -10, // Decrease sleep (working hard)
-          hygiene: -5, // Decrease hygiene (busy day)
+          gold: 100,
+          happiness: -5,
+          sleep: -10,
+          hygiene: -5,
         },
       },
     },
   ];
+
+  // Convert relative sign coordinates to pixel coordinates based on window size
+  const signs = signsRelative.map((sign) => ({
+    ...sign,
+    x: Math.round(sign.xPercent * window.innerWidth),
+    y: Math.round(sign.yPercent * window.innerHeight),
+  }));
 
   // Check if character is near an NPC
   const checkNearNPC = (x, y) => {
@@ -280,11 +279,14 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       const distance = Math.sqrt(
         Math.pow(x - sign.x, 2) + Math.pow(y - sign.y, 2)
       );
+      console.log(`Distance to sign ${sign.name}: ${distance}`);
       if (distance < SIGN_DETECTION_RADIUS) {
+        console.log(`Near sign ${sign.name}, setting nearSign`);
         setNearSign(sign);
         return;
       }
     }
+    console.log("No near sign found, setting nearSign to null");
     setNearSign(null);
   };
 
@@ -317,6 +319,8 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       clearTimeout(cloudsTimer);
     };
   }, []);
+
+  // Handle character movement
 
   // Handle character movement
   const moveCharacter = (moveDirection) => {
@@ -396,7 +400,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     "Telur Ayam": "🥚",
     Beras: "🌾",
     Bumbu: "🧂",
-    "Kerak Telor": "🥘",
+    "Kerak Telor": "🍞",
   };
 
   // Function to get item description
@@ -404,7 +408,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     const descriptions = {
       "Telur Bebek": "Telur bebek segar dari Anosheep",
       "Telur Ayam": "Telur ayam segar dari Anosheep",
-      Nasi: "Beras untuk nasi dari Dinozaurus",
+      Beras: "Beras untuk nasi dari Dinozaurus",
       Bumbu: "Bumbu tradisional Betawi dari Bebi",
       "Kerak Telor": "Kerak telor yang lezat dan bergizi.",
     };
@@ -485,6 +489,16 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             });
           },
         });
+      } else {
+        // Show dialog after quest started
+        setCurrentDialog({
+          ...createDialogMessage(
+            "Selamat datang kembali! Teruskan pencarian bahan untuk kerak telor.",
+            "Merdeka"
+          ),
+          options: ["Terima kasih, Kek!"],
+          onSelect: () => setShowDialog(false),
+        });
       }
     } else if (npc.name === "Anosheep") {
       if (!questProgress.hasStartedQuest) {
@@ -511,7 +525,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             setCurrentSpeaker({ name: "Anosheep", type: "npc" });
             setCurrentDialog({
               ...createDialogMessage(
-                "Sebelum kamu mendapatkan telur, jawab dulu pertanyaan dari saya!",
+                "mbee (Sebelum kamu mendapatkan telur, jawab dulu pertanyaan dari saya!)",
                 "Anosheep"
               ),
               options: ["Siap, silakan tanya!"],
@@ -577,7 +591,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         });
       } else {
         setCurrentDialog({
-          text: "Kamu sudah mendapatkan telur dariku. Sekarang carilah bahan lainnya dari Dinozaurus.",
+          text: "mbee (Kamu sudah mendapatkan telur dariku. Sekarang carilah bahan lainnya dari Dinozaurus.)",
           options: ["Baik, terima kasih!"],
           onSelect: () => setShowDialog(false),
         });
@@ -895,19 +909,19 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   };
 
   const handleActivity = (activity) => {
+    console.log("handleActivity called with activity:", activity);
     if (activity.statsEffect) {
-      updateStats((prevStats) => {
-        const newStats = { ...prevStats };
-        Object.entries(activity.statsEffect).forEach(([stat, value]) => {
-          if (stat === "gold") {
-            // Gold tidak dibatasi 0-100
-            newStats[stat] = (newStats[stat] || 0) + value;
-          } else {
-            newStats[stat] = Math.max(0, Math.min(100, newStats[stat] + value));
-          }
-        });
-        return newStats;
+      // Get current stats from props
+      const newStats = { ...stats };
+      Object.entries(activity.statsEffect).forEach(([stat, value]) => {
+        if (stat === "gold") {
+          newStats[stat] = (newStats[stat] || 0) + value;
+        } else {
+          newStats[stat] = Math.max(0, Math.min(100, newStats[stat] + value));
+        }
       });
+      console.log("Updating stats to:", newStats);
+      updateStats(newStats);
     }
     closeSignDetails();
   };
@@ -1103,6 +1117,57 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
           zIndex: 100,
         }}
       />
+      {/* Debug Display for Character and Signs */}
+      <div
+        style={{
+          position: "fixed",
+          top: "10px",
+          left: "10px",
+          padding: "6px 12px",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          color: "white",
+          fontSize: "12px",
+          borderRadius: "6px",
+          zIndex: 1000,
+          fontFamily: "monospace",
+          userSelect: "none",
+          maxHeight: "200px",
+          overflowY: "auto",
+          width: "250px",
+        }}
+      >
+        <div>
+          <strong>Character Position:</strong> X: {position.x}px, Y: {position.y}px
+        </div>
+        <div style={{ marginTop: "8px" }}>
+          <strong>Signs:</strong>
+          <ul style={{ paddingLeft: "20px", margin: 0 }}>
+            {signs.map((sign) => (
+              <li key={sign.id}>
+                {sign.name}: X: {sign.x}px, Y: {sign.y}px
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      {/* Coordinate Display */}
+      <div
+        style={{
+          position: "fixed",
+          bottom: "10px",
+          left: "10px",
+          padding: "6px 12px",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
+          color: "white",
+          fontSize: "14px",
+          borderRadius: "6px",
+          zIndex: 1000,
+          fontFamily: "monospace",
+          userSelect: "none",
+        }}
+      >
+        X: {Math.round((position.x / window.innerWidth) * 100)}%, Y: {Math.round((position.y / window.innerHeight) * 100)}%
+      </div>
 
       {/* NPCs */}
       {npcs.map((npc) => {
@@ -1323,17 +1388,17 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
           <div
             className="ingredient-collect"
             style={{
-              left: `${collectingIngredient.position.x}px`,
-              top: `${collectingIngredient.position.y}px`,
+              left: `${position.x}px`,
+              top: `${position.y}px`,
             }}
           >
-            {collectingIngredient.emoji}
+            {ingredientEmojis[collectingIngredient]}
           </div>
           <div
             className="ingredient-flash"
             style={{
-              left: `${collectingIngredient.position.x - 50}px`,
-              top: `${collectingIngredient.position.y - 50}px`,
+              left: `${position.x - 50}px`,
+              top: `${position.y - 50}px`,
             }}
           />
         </>
@@ -1352,14 +1417,17 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   <div
                     key={index}
                     className={`inventory-item ${
-                      item === lastCollectedItem ? "inventory-item-new" : ""
+                      item.name === lastCollectedItem
+                        ? "inventory-item-new"
+                        : ""
                     }`}
                   >
                     <div>
                       <h3>
-                        {ingredientEmojis[item]} {item}
+                        {ingredientEmojis[item.name]} {item.name}{" "}
+                        {item.quantity ? `x${item.quantity}` : ""}
                       </h3>
-                      <p>{getItemDescription(item)}</p>
+                      <p>{getItemDescription(item.name)}</p>
                     </div>
                   </div>
                 ))
@@ -1460,7 +1528,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       {/* Kerak Telor */}
       {showKerakTelor && kerakTelorCount > 0 && (
         <img
-          src="/Picture/item_keraktelor.png"
+          src="/Picture/keraktelor.png"
           alt="Kerak Telor"
           onClick={collectKerakTelor}
           style={{

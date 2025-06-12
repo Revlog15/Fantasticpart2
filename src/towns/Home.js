@@ -37,7 +37,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
   const [workProgress, setWorkProgress] = useState(0); // 0 to 1
   const [workStartStats, setWorkStartStats] = useState(null);
   const workDuration = 7000; // 7 seconds
-  const workGoldIncrease = 10; // Amount gold increases
+  const workGoldIncrease = 70; // Amount gold increases
   const workHappinessDecrease = 5; // Amount happiness decreases
   const workHungerDecrease = 10; // Amount hunger decreases
   const workSleepDecrease = 5; // Amount sleep decreases
@@ -54,6 +54,13 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
   const eatAnimationFrame = useRef();
   const sleepAnimationFrame = useRef();
   const showerAnimationFrame = useRef();
+
+  // FIX: Define a cleanUp function that uses the passed updateStats prop
+  const cleanUp = () => {
+    if (updateStats) {
+      updateStats({ hygiene: 100 });
+    }
+  };
 
   // Simple movement function
   const moveCharacter = (direction) => {
@@ -185,7 +192,8 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
         } else {
           setShowShowerAnimation(false);
           setShowerProgress(0);
-          updateStats({ hygiene: 100 });
+          // FIX: Call the new cleanUp function
+          cleanUp();
         }
       };
       showerAnimationFrame.current = requestAnimationFrame(animate);
@@ -198,7 +206,8 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
     setShowerProgress(1);
     setShowShowerAnimation(false);
     setTimeout(() => {
-      updateStats({ hygiene: 100 });
+      // FIX: Call the new cleanUp function
+      cleanUp();
       setShowerProgress(0);
     }, 0);
   };
@@ -858,7 +867,7 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
         !showEatAnimation &&
         !showWorkAnimation && (
           <div className="action-buttons">
-            <button onClick={handleShower}>Clean Up</button>
+            <button onClick={() => {console.log("Clean Up button clicked"); handleShower();}}>Clean Up</button>
           </div>
         )}
 

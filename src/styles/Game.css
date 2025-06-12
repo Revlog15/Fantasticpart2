@@ -1087,7 +1087,7 @@
 
 .game-over-button {
   padding: 12px;
-  background-color: #00ff99; /* Neon green */
+  background-color: #e72e0d; /* Neon green */
   color: #000;
   border: none;
   cursor: pointer;
@@ -1098,7 +1098,7 @@
 }
 
 .game-over-button:hover {
-  background-color: #00cc77; /* Darker neon green on hover */
+  background-color: #b10303; /* Darker neon green on hover */
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 #000;
 }

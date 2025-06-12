@@ -9,7 +9,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [showClouds, setShowClouds] = useState(true);
   const [nearNPC, setNearNPC] = useState(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [currentDialog, setCurrentDialog] = useState([]);
+  const [currentDialog, setCurrentDialog] = useState(null);
   const [showInventory, setShowInventory] = useState(false);
   const [questProgress, setQuestProgress] = useState(() => {
     const savedQuestProgress = localStorage.getItem("padangQuestProgress");
@@ -22,7 +22,6 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
           hasCabai: false,
         };
 
-    // Check initial inventory for already collected items
     return {
       ...initialProgress,
       hasDaging:
@@ -72,9 +71,8 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       image: "npc_merdeka",
       description: "Seorang kakek bijaksana yang ahli dalam pembuatan rendang.",
       dialogs: {
-        initial: [
+        initial:
           "Ah, selamat datang di Kota Padang, anak muda! Aku dengar kamu ingin belajar membuat rendang. Rendang adalah warisan leluhur yang sangat berharga bagi kami.",
-        ],
         options: [
           "Iya Kek, saya ingin belajar membuat rendang!",
           "Mohon bimbingan Kakek untuk membuat rendang.",
@@ -91,7 +89,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       image: "npc_anosheep",
       description: "Penjual daging sapi dan produk susu terbaik di Padang.",
       dialogs: {
-        initial: ["Halo, ada yang bisa saya bantu?"],
+        initial: "Halo, ada yang bisa saya bantu?",
         withoutQuest:
           "MBEEE (Maaf, sebaiknya kamu temui Merdeka dulu di pusat kota.)",
         playerGreeting:
@@ -128,7 +126,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       image: "npc_dinozaurus",
       description: "Petani kelapa yang menjual santan segar.",
       dialogs: {
-        initial: ["Selamat datang di kebun kelapa! Ada yang bisa kubantu?"],
+        initial: "Selamat datang di kebun kelapa! Ada yang bisa kubantu?",
         withoutDaging: "Sebaiknya kamu dapatkan daging dari Anosheep dulu.",
         withDaging:
           "Ah, kamu sudah mendapatkan daging sapi? Bagus! Tapi sebelum memberikan santan, saya ingin menguji pengetahuanmu tentang Kota Padang.",
@@ -168,7 +166,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       image: "npc_bebi",
       description: "Petani cabai yang menanam berbagai jenis cabai.",
       dialogs: {
-        initial: ["Halo, ada yang bisa saya bantu?"],
+        initial: "Halo, ada yang bisa saya bantu?",
         playerGreeting:
           "Halo, saya sedang mencari cabai untuk membuat rendang. Apakah kamu bisa membantuku mendapatkan cabai?",
         withoutIngredients:
@@ -300,30 +298,34 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
 
   // Ingredient emoji mapping
   const ingredientEmojis = {
-    "Daging Sapi": "🥩",
-    Santan: "🥥",
-    Cabai: "🌶️",
+    "Daging Sapi Segar": "🥩",
+    "Santan Kelapa": "🥥",
+    "Cabai Merah": "🌶️",
   };
 
   // Function to get item description
-  const getItemDescription = useCallback((item) => {
+  const getItemDescription = useCallback((itemName) => {
     const descriptions = {
       "Daging Sapi Segar": "Daging sapi segar dari Anosheep",
       "Santan Kelapa": "Santan kelapa murni dari Dinozaurus",
       "Cabai Merah": "Cabai merah dari Bebi",
       Rendang: "Rendang asli Padang yang lezat dan bergizi.",
     };
-    return descriptions[item] || "Item tidak dikenal";
+    return descriptions[itemName] || "Item tidak dikenal";
   }, []);
 
   // Add ingredient to inventory with animation
   const handleCollectIngredient = useCallback(
     (ingredient) => {
-      setCollectingIngredient(ingredient);
+      setCollectingIngredient({
+        name: ingredient,
+        emoji: ingredientEmojis[ingredient] || "❓",
+        position: { x: 0, y: 0 }, // Default position, can be updated if needed
+      });
       setLastCollectedItem(ingredient);
 
-      // Panggil addToInventory dari props (dari Game.js)
-      addToInventory(ingredient);
+      // Panggil addToInventory dari props (dari Game.js) with quantity 1
+      addToInventory(ingredient, 1);
 
       setQuestProgress((prev) => {
         let updatedProgress = { ...prev };
@@ -339,7 +341,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
         setCollectingIngredient(null);
       }, 1000);
     },
-    [addToInventory]
+    [addToInventory, ingredientEmojis]
   );
 
   // Function to collect Rendang
@@ -355,16 +357,34 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
     }
   }, [rendangCount, addToInventory]);
 
+  // Fixed: Simplified dialog message creation
+  const createDialogMessage = (text, speaker, icon = null) => ({
+    text: String(text || "")
+      .replace(/undefined$/, "")
+      .trim(),
+    speaker,
+    icon,
+  });
+
   // Update handleDialog for Dinozaurus
   const handleDialog = (npc) => {
     setShowDialog(true);
 
+    // Reset dialog and speaker state when switching NPCs
+    setCurrentDialog(null);
+    setCurrentSpeaker(null);
+
     if (npc.name === "Merdeka") {
-      setCurrentSpeaker({ name: "Kakek Merdeka", type: "npc" });
+      setCurrentSpeaker("Kakek Merdeka");
       if (!questProgress.hasStartedQuest) {
         setCurrentDialog({
-          ...createDialogMessage(npc.dialogs.initial[0], "Kakek Merdeka"),
-          options: npc.dialogs.options,
+          ...createDialogMessage(
+            Array.isArray(npc.dialogs.initial)
+              ? npc.dialogs.initial[0]
+              : npc.dialogs.initial,
+            "Kakek Merdeka"
+          ),
+          options: npc.dialogs.options || ["OK"],
           onSelect: (option) => {
             setQuestProgress({ ...questProgress, hasStartedQuest: true });
             setCurrentDialog({
@@ -374,29 +394,44 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
             });
           },
         });
+      } else {
+        // Add dialog flow for when quest has started
+        setCurrentDialog({
+          text: "Kamu sudah memulai misi membuat rendang. Teruskan pencarian bahan-bahan yang diperlukan!",
+          options: ["Baik, saya akan melanjutkan."],
+          onSelect: () => setShowDialog(false),
+        });
       }
     } else if (npc.name === "Anosheep") {
       if (!questProgress.hasStartedQuest) {
-        setCurrentSpeaker({ name: "Anosheep", type: "npc" });
+        setCurrentSpeaker("Anosheep");
         setCurrentDialog({
-          ...createDialogMessage(npc.dialogs.withoutQuest, "Anosheep"),
+          ...createDialogMessage(
+            Array.isArray(npc.dialogs.withoutQuest)
+              ? npc.dialogs.withoutQuest[0]
+              : npc.dialogs.withoutQuest,
+            "Anosheep"
+          ),
           options: ["Baik, saya akan menemui Merdeka dulu."],
           onSelect: () => setShowDialog(false),
         });
       } else if (!questProgress.hasDaging) {
         // First show player's greeting
-        setCurrentSpeaker({ name: "Player", type: "player" });
+        setCurrentSpeaker("Player");
         setCurrentDialog({
-          ...createDialogMessage(npc.dialogs.playerGreeting, "Player"),
+          ...createDialogMessage(
+            Array.isArray(npc.dialogs.playerGreeting)
+              ? npc.dialogs.playerGreeting[0]
+              : npc.dialogs.playerGreeting,
+            "Player"
+          ),
           options: ["..."],
           onSelect: () => {
             // Show Anosheep's response and transition to question
-            setCurrentSpeaker({ name: "Anosheep", type: "npc" });
+            setCurrentSpeaker("Anosheep");
             setCurrentDialog({
               ...createDialogMessage(
-                npc.dialogs.anosheepResponse +
-                  "\n\n" +
-                  npc.dialogs.provinceQuestion,
+                `${npc.dialogs.anosheepResponse}\n\n${npc.dialogs.provinceQuestion}`,
                 "Anosheep"
               ),
               options: npc.dialogs.provinceOptions,
@@ -405,9 +440,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   // If province answer correct, show ingredient options
                   setCurrentDialog({
                     ...createDialogMessage(
-                      npc.dialogs.provinceSuccess +
-                        "\n\n" +
-                        npc.dialogs.withQuest,
+                      `${npc.dialogs.provinceSuccess}\n\n${npc.dialogs.withQuest}`,
                       "Anosheep"
                     ),
                     options: npc.dialogs.options,
@@ -478,13 +511,23 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
     } else if (npc.name === "Dinozaurus") {
       if (!questProgress.hasDaging) {
         setCurrentDialog({
-          ...createDialogMessage(npc.dialogs.withoutDaging, "Dinozaurus"),
+          ...createDialogMessage(
+            Array.isArray(npc.dialogs.withoutDaging)
+              ? npc.dialogs.withoutDaging[0]
+              : npc.dialogs.withoutDaging,
+            "Dinozaurus"
+          ),
           options: ["Baik, saya akan mencari daging dulu."],
           onSelect: () => setShowDialog(false),
         });
       } else if (!questProgress.hasSantan) {
         setCurrentDialog({
-          ...createDialogMessage(npc.dialogs.withDaging, "Dinozaurus"),
+          ...createDialogMessage(
+            Array.isArray(npc.dialogs.withDaging)
+              ? npc.dialogs.withDaging[0]
+              : npc.dialogs.withDaging,
+            "Dinozaurus"
+          ),
           options: ["Saya siap menjawab pertanyaannya!"],
           onSelect: () => {
             // First question
@@ -495,7 +538,6 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                 if (optionIndex === npc.dialogs.correct) {
                   setQuestProgress({ ...questProgress, hasSantan: true });
                   // Add santan to inventory with animation from Dinozaurus's position
-                  const npcPos = npcs.find((n) => n.name === "Dinozaurus");
                   handleCollectIngredient("Santan Kelapa");
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.success, "Dinozaurus"),
@@ -508,7 +550,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   // If wrong, give hint and second chance
                   setCurrentDialog({
                     ...createDialogMessage(
-                      npc.dialogs.wrong + " " + npc.dialogs.hint,
+                      `${npc.dialogs.wrong} ${npc.dialogs.hint}`,
                       "Dinozaurus"
                     ),
                     options: [
@@ -528,9 +570,6 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                               hasSantan: true,
                             });
                             // Add santan to inventory with animation from Dinozaurus's position
-                            const npcPos = npcs.find(
-                              (n) => n.name === "Dinozaurus"
-                            );
                             handleCollectIngredient("Santan Kelapa");
                             setCurrentDialog({
                               ...createDialogMessage(
@@ -573,12 +612,12 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
     } else if (npc.name === "Bebi") {
       if (!questProgress.hasDaging || !questProgress.hasSantan) {
         // First show player's greeting
-        setCurrentSpeaker({ name: "Player", type: "player" });
+        setCurrentSpeaker("Player");
         setCurrentDialog({
           ...createDialogMessage(npc.dialogs.playerGreeting, "Player"),
           options: ["..."],
           onSelect: () => {
-            setCurrentSpeaker({ name: "Bebi", type: "npc" });
+            setCurrentSpeaker("Bebi");
             setCurrentDialog({
               ...createDialogMessage(npc.dialogs.withoutIngredients, "Bebi"),
               options: ["Baik, saya akan mengumpulkan bahan-bahan dulu."],
@@ -588,13 +627,13 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
         });
       } else if (!questProgress.hasCabai) {
         // Show player's greeting first
-        setCurrentSpeaker({ name: "Player", type: "player" });
+        setCurrentSpeaker("Player");
         setCurrentDialog({
           ...createDialogMessage(npc.dialogs.playerGreeting, "Player"),
           options: ["..."],
           onSelect: () => {
-            // Then show Bebi's response and question
-            setCurrentSpeaker({ name: "Bebi", type: "npc" });
+            // Then show Bebi's response
+            setCurrentSpeaker("Bebi");
             setCurrentDialog({
               ...createDialogMessage(
                 npc.dialogs.bebiResponse + "\n\n" + npc.dialogs.question,
@@ -604,22 +643,16 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
               onSelect: (optionIndex) => {
                 if (optionIndex === npc.dialogs.correct) {
                   setQuestProgress({ ...questProgress, hasCabai: true });
-                  // Add cabai to inventory with animation from Bebi's position
-                  const npcPos = npcs.find((n) => n.name === "Bebi");
                   handleCollectIngredient("Cabai Merah");
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.success, "Bebi"),
                     options: ["Terima kasih! Saatnya membuat rendang!"],
                     onSelect: () => {
                       setShowDialog(false);
-                      setShowQuizOptions(false);
-                      // Start congratulatory sequence after dialog
                       setShowCongrats(true);
-                      // Congrats message will show for 3 seconds before cooking starts
                       setTimeout(() => {
                         setShowCongrats(false);
                         setShowCookingAnimation(true);
-                        // Start cooking animation
                         let progress = 0;
                         const cookingInterval = setInterval(() => {
                           progress += 1;
@@ -639,7 +672,6 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                     options: ["Baik, saya akan mencoba lagi."],
                     onSelect: () => {
                       setShowDialog(false);
-                      setShowQuizOptions(false);
                     },
                   });
                 }
@@ -682,10 +714,10 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
 
   // Update dialog display with animation
   useEffect(() => {
-    if (currentDialog.text && showDialog) {
+    if (currentDialog && currentDialog.text && showDialog) {
       typeText(currentDialog.text);
     }
-  }, [currentDialog.text, showDialog, typeText]);
+  }, [currentDialog, showDialog, typeText]);
 
   // Sync questProgress with inventory whenever inventory changes
   useEffect(() => {
@@ -718,13 +750,6 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       }
     }
   }, [inventory, rendangCount]);
-
-  // Function to create a dialog message with speaker
-  const createDialogMessage = (text, speaker, icon = null) => ({
-    text,
-    speaker,
-    icon,
-  });
 
   return (
     <div
@@ -852,7 +877,10 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
             {isNearby && (
               <button
                 className="npc-interaction-button"
-                onClick={() => handleDialog(npc)}
+                onClick={() => {
+                  console.log("NPC button clicked for:", npc.name);
+                  handleDialog(npc);
+                }}
                 style={{
                   position: "absolute",
                   left: `${npc.x}%`,
@@ -952,7 +980,7 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       </div>
 
       {/* Dialog Box with Speaker Indicators */}
-      {showDialog && (
+      {showDialog && currentDialog && (
         <div className="dialog-box">
           <div className="dialog-content">
             {currentDialog.speaker && (
@@ -977,12 +1005,13 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
             )}
             <div className="dialog-text-container">
               <div className="dialog-text">
-                {typedText}
+                {typedText || ""}
                 {isTyping && <span className="dialog-cursor" />}
               </div>
             </div>
             <div className={`dialog-options ${showOptions ? "show" : ""}`}>
               {!isTyping &&
+                currentDialog.options &&
                 currentDialog.options.map((option, index) => (
                   <button
                     key={index}
@@ -1065,14 +1094,17 @@ function Padang({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   <div
                     key={index}
                     className={`inventory-item ${
-                      item === lastCollectedItem ? "inventory-item-new" : ""
+                      item.name === lastCollectedItem
+                        ? "inventory-item-new"
+                        : ""
                     }`}
                   >
                     <div>
                       <h3>
-                        {ingredientEmojis[item]} {item}
+                        {ingredientEmojis[item.name] || "📦"} {item.name}{" "}
+                        {item.quantity > 1 ? `x${item.quantity}` : ""}
                       </h3>
-                      <p>{getItemDescription(item)}</p>
+                      <p>{getItemDescription(item.name)}</p>
                     </div>
                   </div>
                 ))

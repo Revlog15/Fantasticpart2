@@ -285,7 +285,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   // Function to collect Papeda
   const handleCollectPapeda = useCallback(() => {
     if (papedaCount > 0) {
-      addToInventory("Papeda"); // Panggil addToInventory dari props
+      addToInventory("Papeda", -1);
       setPapedaCount((prev) => prev - 1);
       setShowPapeda(false); // Sembunyikan Papeda setelah dikumpulkan
       setShowCongrats(true); // Tampilkan pesan selamat
@@ -1311,9 +1311,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                             hunger: Math.min(100, stats.hunger + 40),
                           });
                           // Remove Papeda from inventory
-                          setInventory((prev) =>
-                            prev.filter((i) => i !== "Papeda")
-                          );
+                          addToInventory("Papeda", -1);
                           // Show message
                           setShowDialog(true);
                           setCurrentDialog({

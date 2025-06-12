@@ -242,9 +242,9 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
     return descriptions[item] || "Bahan untuk membuat Papeda";
   }, []);
 
-  // Function to create a dialog message with speaker
+  // Fixed: Simplified dialog message creation
   const createDialogMessage = (text, speaker, icon = null) => ({
-    text,
+    text: typeof text === "string" ? text.trim() : "",
     speaker,
     icon,
   });
@@ -384,6 +384,20 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
               onSelect: () => setShowDialog(false),
             });
           },
+        });
+      } else if (questProgress.hasIkan && questProgress.hasSagu && questProgress.hasBumbu) {
+        setCurrentDialog({
+          text: "Wah, kamu sudah berhasil mengumpulkan semua bahan! Sekarang kamu bisa membuat Papeda yang lezat. Jangan lupa untuk mengumpulkan Papeda yang sudah jadi!",
+          speaker: "Merdeka",
+          options: ["Terima kasih atas bimbingannya, Kek!"],
+          onSelect: () => setShowDialog(false),
+        });
+      } else {
+        setCurrentDialog({
+          text: "Kamu sudah memulai petualanganmu. Lanjutkan mencari bahan-bahan yang diperlukan!",
+          speaker: "Merdeka",
+          options: ["Baik, Kek!"],
+          onSelect: () => setShowDialog(false),
         });
       }
     } else if (npc.name === "Anosheep") {
@@ -1162,6 +1176,10 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
       <button
         className="return-button"
         onClick={() => {
+          if (showDialog) {
+            setShowDialog(false);
+            setCurrentDialog(null);
+          }
           setIsLeaving(true);
           setTimeout(onReturn, 1000);
         }}
@@ -1290,7 +1308,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                           filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.5))",
                         }}
                       >
-                        {ingredientEmojis[item]}
+                        {ingredientEmojis[item.name] || "📦"}
                       </span>
                       <span
                         style={{
@@ -1299,10 +1317,11 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                           fontWeight: "500",
                         }}
                       >
-                        {item}
+                        {item.name}
+                        {item.quantity > 1 ? ` x${item.quantity}` : ""}
                       </span>
                     </div>
-                    {item === "Papeda" && (
+                    {item.name === "Papeda" && (
                       <button
                         onClick={() => {
                           // Update stats
@@ -1310,7 +1329,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                             happiness: Math.min(100, stats.happiness + 30),
                             hunger: Math.min(100, stats.hunger + 40),
                           });
-                          // Remove Papeda from inventory
+                          // Remove one Papeda from inventory
                           addToInventory("Papeda", -1);
                           // Show message
                           setShowDialog(true);
@@ -1330,10 +1349,6 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                           fontWeight: "bold",
                           boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                           transition: "all 0.2s ease",
-                          ":hover": {
-                            background: "#45a049",
-                            transform: "scale(1.05)",
-                          },
                         }}
                       >
                         Makan
@@ -1357,11 +1372,6 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                 fontWeight: "bold",
                 fontSize: "16px",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                transition: "all 0.2s ease",
-                ":hover": {
-                  background: "#FFC800",
-                  transform: "scale(1.02)",
-                },
               }}
             >
               Tutup

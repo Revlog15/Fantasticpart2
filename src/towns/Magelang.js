@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./Town.css";
 import { auth } from "../firebase";
 
-function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
+function Magelang(props) {
+  if (props.showDeathScreen) return null;
+
   // Get selected character from localStorage at the very top
   const selectedCharacter = localStorage.getItem("selectedCharacter") || "revlog";
 
@@ -570,34 +572,34 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
         <div className="stat-item">
           <span>Happiness:</span>
           <div className="stat-bar happiness-bar">
-            <div className="stat-fill" style={{ width: `${stats.happiness}%` }}></div>
+            <div className="stat-fill" style={{ width: `${props.stats.happiness}%` }}></div>
           </div>
-          <span>{stats.happiness}%</span>
+          <span>{props.stats.happiness}%</span>
         </div>
         <div className="stat-item">
           <span>Hunger:</span>
           <div className="stat-bar hunger-bar">
-            <div className="stat-fill" style={{ width: `${stats.hunger}%` }}></div>
+            <div className="stat-fill" style={{ width: `${props.stats.hunger}%` }}></div>
           </div>
-          <span>{stats.hunger}%</span>
+          <span>{props.stats.hunger}%</span>
         </div>
         <div className="stat-item">
           <span>Sleep:</span>
           <div className="stat-bar sleep-bar">
-            <div className="stat-fill" style={{ width: `${stats.sleep}%` }}></div>
+            <div className="stat-fill" style={{ width: `${props.stats.sleep}%` }}></div>
           </div>
-          <span>{stats.sleep}%</span>
+          <span>{props.stats.sleep}%</span>
         </div>
         <div className="stat-item">
           <span>Hygiene:</span>
           <div className="stat-bar hygiene-bar">
-            <div className="stat-fill" style={{ width: `${stats.hygiene}%` }}></div>
+            <div className="stat-fill" style={{ width: `${props.stats.hygiene}%` }}></div>
           </div>
-          <span>{stats.hygiene}%</span>
+          <span>{props.stats.hygiene}%</span>
         </div>
         <div className="stat-item">
           <span>Gold:</span>
-          <span className="gold-amount">{stats.gold}</span>
+          <span className="gold-amount">{props.stats.gold}</span>
         </div>
       </div>
 

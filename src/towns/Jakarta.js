@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
 import { auth } from "../firebase";
 
-function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
+function Jakarta(props) {
+  if (props.showDeathScreen) return null;
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 400, y: 300 });
@@ -17,11 +18,11 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [questProgress, setQuestProgress] = useState(() => {
     const saved = localStorage.getItem(questKey);
     return saved ? JSON.parse(saved) : {
-      hasStartedQuest: false,
-      hasTelur: false,
-      hasNasi: false,
-      hasBumbu: false,
-    };
+          hasStartedQuest: false,
+          hasTelur: false,
+          hasNasi: false,
+          hasBumbu: false,
+        };
   });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const CHARACTER_SIZE = 150;
@@ -300,7 +301,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     setIsLeaving(true);
     setShowClouds(true);
     setTimeout(() => {
-      onReturn();
+      props.onReturn();
     }, 500);
   };
 
@@ -423,7 +424,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       setLastCollectedItem(ingredient);
 
       // Panggil addToInventory dari props (dari Game.js)
-      addToInventory(ingredient);
+      props.addToInventory(ingredient);
 
       setQuestProgress((prev) => {
         let updatedProgress = { ...prev };
@@ -439,13 +440,13 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         setCollectingIngredient(null);
       }, 1000);
     },
-    [addToInventory]
+    [props.addToInventory]
   );
 
   // Function to collect Kerak Telor
   const collectKerakTelor = useCallback(() => {
     if (kerakTelorCount > 0) {
-      addToInventory("Kerak Telor"); // Panggil addToInventory dari props
+      props.addToInventory("Kerak Telor"); // Panggil addToInventory dari props
       setKerakTelorCount((prev) => prev - 1);
       setShowKerakTelor(false); // Sembunyikan Kerak Telor setelah dikumpulkan
       setShowCongrats(true); // Tampilkan pesan selamat
@@ -454,7 +455,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     } else {
       console.log("Kerak Telor sudah habis.");
     }
-  }, [kerakTelorCount, addToInventory]);
+  }, [kerakTelorCount, props.addToInventory]);
 
   // Function to create a dialog message with speaker
   const createDialogMessage = (text, speaker, icon = null) => ({
@@ -865,7 +866,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   // Add stat decrease over time
   useEffect(() => {
     const statInterval = setInterval(() => {
-      updateStats((prevStats) => ({
+      props.updateStats((prevStats) => ({
         ...prevStats,
         happiness: Math.max(0, prevStats.happiness - 0.1),
         hunger: Math.max(0, prevStats.hunger - 0.2),
@@ -875,14 +876,14 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     }, 1000);
 
     return () => clearInterval(statInterval);
-  }, [updateStats]);
+  }, [props.updateStats]);
 
   // Effect to show Kerak Telor if all ingredients are collected
   useEffect(() => {
     const allIngredientsCollected =
-      (inventory.includes("Telur Bebek") || inventory.includes("Telur Ayam")) &&
-      inventory.includes("Nasi") &&
-      inventory.includes("Bumbu");
+      (props.inventory.includes("Telur Bebek") || props.inventory.includes("Telur Ayam")) &&
+      props.inventory.includes("Nasi") &&
+      props.inventory.includes("Bumbu");
 
     if (allIngredientsCollected) {
       if (kerakTelorCount > 0) {
@@ -892,7 +893,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         setShowKerakTelor(false);
       }
     }
-  }, [inventory, kerakTelorCount]);
+  }, [props.inventory, kerakTelorCount]);
 
   // Save progress to localStorage
   useEffect(() => {
@@ -915,7 +916,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
     console.log("handleActivity called with activity:", activity);
     if (activity.statsEffect) {
       // Get current stats from props
-      const newStats = { ...stats };
+      const newStats = { ...props.stats };
       Object.entries(activity.statsEffect).forEach(([stat, value]) => {
         if (stat === "gold") {
           newStats[stat] = (newStats[stat] || 0) + value;
@@ -924,7 +925,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
         }
       });
       console.log("Updating stats to:", newStats);
-      updateStats(newStats);
+      props.updateStats(newStats);
     }
     closeSignDetails();
   };
@@ -1020,13 +1021,13 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.happiness}%`,
+                width: `${props.stats.happiness}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
               <div className="stat-percentage">
-                {Math.round(stats.happiness)}%
+                {Math.round(props.stats.happiness)}%
               </div>
             </div>
           </div>
@@ -1037,12 +1038,12 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.hunger}%`,
+                width: `${props.stats.hunger}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
-              <div className="stat-percentage">{Math.round(stats.hunger)}%</div>
+              <div className="stat-percentage">{Math.round(props.stats.hunger)}%</div>
             </div>
           </div>
         </div>
@@ -1052,12 +1053,12 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.sleep}%`,
+                width: `${props.stats.sleep}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
-              <div className="stat-percentage">{Math.round(stats.sleep)}%</div>
+              <div className="stat-percentage">{Math.round(props.stats.sleep)}%</div>
             </div>
           </div>
         </div>
@@ -1067,20 +1068,20 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.hygiene}%`,
+                width: `${props.stats.hygiene}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
               <div className="stat-percentage">
-                {Math.round(stats.hygiene)}%
+                {Math.round(props.stats.hygiene)}%
               </div>
             </div>
           </div>
         </div>
         <div className="stat-item gold-item">
           <span>Gold:</span>
-          <span className="gold-amount">{stats.gold || 0}</span>
+          <span className="gold-amount">{props.stats.gold || 0}</span>
         </div>
       </div>
 
@@ -1120,57 +1121,6 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
           zIndex: 100,
         }}
       />
-      {/* Debug Display for Character and Signs */}
-      <div
-        style={{
-          position: "fixed",
-          top: "10px",
-          left: "10px",
-          padding: "6px 12px",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          color: "white",
-          fontSize: "12px",
-          borderRadius: "6px",
-          zIndex: 1000,
-          fontFamily: "monospace",
-          userSelect: "none",
-          maxHeight: "200px",
-          overflowY: "auto",
-          width: "250px",
-        }}
-      >
-        <div>
-          <strong>Character Position:</strong> X: {position.x}px, Y: {position.y}px
-        </div>
-        <div style={{ marginTop: "8px" }}>
-          <strong>Signs:</strong>
-          <ul style={{ paddingLeft: "20px", margin: 0 }}>
-            {signs.map((sign) => (
-              <li key={sign.id}>
-                {sign.name}: X: {sign.x}px, Y: {sign.y}px
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      {/* Coordinate Display */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: "10px",
-          left: "10px",
-          padding: "6px 12px",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          color: "white",
-          fontSize: "14px",
-          borderRadius: "6px",
-          zIndex: 1000,
-          fontFamily: "monospace",
-          userSelect: "none",
-        }}
-      >
-        X: {Math.round((position.x / window.innerWidth) * 100)}%, Y: {Math.round((position.y / window.innerHeight) * 100)}%
-      </div>
 
       {/* NPCs */}
       {npcs.map((npc) => {
@@ -1413,10 +1363,10 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
           <div className="inventory-content">
             <h2>Inventory Bahan Kerak Telor</h2>
             <div className="inventory-items">
-              {inventory.length === 0 ? (
+              {props.inventory.length === 0 ? (
                 <p>Belum ada bahan yang dikumpulkan.</p>
               ) : (
-                inventory.map((item, index) => (
+                props.inventory.map((item, index) => (
                   <div
                     key={index}
                     className={`inventory-item ${

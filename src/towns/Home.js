@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/Game.css";
 
-function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
+function Home({ onReturn, stats, updateStats, work, eat, sleep, showDeathScreen }) {
+  if (showDeathScreen) return null;
   const CHARACTER_SIZE = 200;
   const selectedCharacter =
     localStorage.getItem("selectedCharacter") || "revlog";
@@ -709,11 +710,6 @@ function Home({ onReturn, stats, updateStats, work, eat, sleep }) {
           </button>
         </div>
       )}
-
-      {/* Coordinate Display */}
-      <div className="coordinates-display">
-        X: {Math.round(position.x)}% Y: {Math.round(position.y)}%
-      </div>
 
       <div className="character-stats">
         <div className="stat-item">

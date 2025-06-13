@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
 import { auth } from "../firebase";
 
-function Padang({ onReturn }) {
+function Padang(props) {
+  if (props.showDeathScreen) return null;
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 0.5, y: 0.5 }); // relative position (0 to 1)
@@ -23,12 +24,6 @@ function Padang({ onReturn }) {
   const TYPING_SPEED = 30; // milliseconds per character
   const [collectingIngredient, setCollectingIngredient] = useState(null);
   const [lastCollectedItem, setLastCollectedItem] = useState(null);
-  const [stats, setStats] = useState({
-    happiness: 100,
-    hunger: 100,
-    hygiene: 100,
-    sleep: 100,
-  });
   const [showCookingAnimation, setShowCookingAnimation] = useState(false);
   const [showRendang, setShowRendang] = useState(false);
   const [rendangPosition, setRendangPosition] = useState({ x: 600, y: 400 });
@@ -210,7 +205,7 @@ function Padang({ onReturn }) {
     setIsLeaving(true);
     setShowClouds(true);
     setTimeout(() => {
-      onReturn();
+      props.onReturn();
     }, 500);
   };
 
@@ -309,7 +304,7 @@ function Padang({ onReturn }) {
 
   // Add ingredient to inventory with animation
   const addToInventory = (item) => {
-    // Get NPC position for animation start point
+    // Cek apakah item punya NPC asal (untuk animasi)
     const npcPos = npcs.find(
       (n) =>
         (item === "Daging Sapi" && n.name === "Anosheep") ||
@@ -317,22 +312,27 @@ function Padang({ onReturn }) {
         (item === "Gula Aren" && n.name === "Bebi")
     );
 
-    // Show collection animation
-    setCollectingIngredient({
-      item,
-      emoji: ingredientEmojis[item],
-      position: {
-        x: npcPos.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-        y: npcPos.y + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-      },
-    });
+    if (npcPos) {
+      // Show collection animation dari NPC
+      setCollectingIngredient({
+        item,
+        emoji: ingredientEmojis[item],
+        position: {
+          x: npcPos.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
+          y: npcPos.y + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
+        },
+      });
 
-    // Add to inventory after animation
-    setTimeout(() => {
+      setTimeout(() => {
+        setInventory((prev) => [...prev, item]);
+        setLastCollectedItem(item);
+        setCollectingIngredient(null);
+      }, 1000);
+    } else {
+      // Jika tidak ada NPC (misal: Rendang), langsung masuk inventory tanpa animasi
       setInventory((prev) => [...prev, item]);
       setLastCollectedItem(item);
-      setCollectingIngredient(null);
-    }, 1000);
+    }
   };
 
   // Remove ingredient from inventory
@@ -361,7 +361,7 @@ function Padang({ onReturn }) {
   // Update handleDialog for Dinozaurus
   const handleDialog = (npc) => {
     setShowDialog(true);
-
+    
     if (npc.name === "Merdeka") {
       setCurrentSpeaker({ name: "Kakek Merdeka", type: "npc" });
       if (!questProgress.hasStartedQuest) {
@@ -499,19 +499,8 @@ function Padang({ onReturn }) {
                   setQuestProgress({ ...questProgress, hasSantan: true });
                   // Add santan to inventory with animation from Dinozaurus's position
                   const npcPos = npcs.find((n) => n.name === "Dinozaurus");
-                  setCollectingIngredient({
-                    item: "Santan",
-                    emoji: ingredientEmojis["Santan"],
-                    position: {
-                      x: npcPos.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                      y: npcPos.y + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                    },
-                  });
-                  setTimeout(() => {
-                    addToInventory("Santan");
-                    setCollectingIngredient(null);
-                  }, 1000);
-
+                  addToInventory("Santan");
+                  
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.success, "Dinozaurus"),
                     options: [
@@ -546,19 +535,8 @@ function Padang({ onReturn }) {
                             const npcPos = npcs.find(
                               (n) => n.name === "Dinozaurus"
                             );
-                            setCollectingIngredient({
-                              item: "Santan",
-                              emoji: ingredientEmojis["Santan"],
-                              position: {
-                                x: npcPos.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                                y: npcPos.y + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                              },
-                            });
-                            setTimeout(() => {
-                              addToInventory("Santan");
-                              setCollectingIngredient(null);
-                            }, 1000);
-
+                            addToInventory("Santan");
+                            
                             setCurrentDialog({
                               ...createDialogMessage(
                                 npc.dialogs.secondSuccess,
@@ -633,16 +611,8 @@ function Padang({ onReturn }) {
                   setQuestProgress({ ...questProgress, hasCabai: true });
                   // Add cabai to inventory with animation from Bebi's position
                   const npcPos = npcs.find((n) => n.name === "Bebi");
-                  setCollectingIngredient({
-                    item: "Cabai",
-                    emoji: ingredientEmojis["Cabai"],
-                    position: {
-                      x: npcPos.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                      y: npcPos.y + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2,
-                    },
-                  });
+                  addToInventory("Cabai");
                   setTimeout(() => {
-                    addToInventory("Cabai");
                     setCollectingIngredient(null);
                     setCurrentDialog({
                       ...createDialogMessage(npc.dialogs.success, "Bebi"),
@@ -696,7 +666,7 @@ function Padang({ onReturn }) {
   };
 
   // Typing animation effect
-  const typingIntervalRef = React.useRef(null);
+  const typingIntervalRef = useRef(null);
 
   const typeText = useCallback((text) => {
     const textToType = String(text || "");
@@ -716,7 +686,16 @@ function Padang({ onReturn }) {
         setShowOptions(true);
       }
     }, TYPING_SPEED);
-  }, []);
+  }, [TYPING_SPEED]);
+
+  const handleFastForward = () => {
+    if (isTyping) {
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      setTypedText(currentDialog.text);
+      setIsTyping(false);
+      setShowOptions(true);
+    }
+  };
 
   // Update dialog display with animation
   useEffect(() => {
@@ -725,20 +704,6 @@ function Padang({ onReturn }) {
     }
   }, [currentDialog.text, showDialog, typeText]);
 
-  // Add stat decrease over time
-  useEffect(() => {
-    const statInterval = setInterval(() => {
-      setStats((prevStats) => ({
-        happiness: Math.max(0, prevStats.happiness - 0.1),
-        hunger: Math.max(0, prevStats.hunger - 0.2),
-        hygiene: Math.max(0, prevStats.hygiene - 0.1),
-        sleep: Math.max(0, prevStats.sleep - 0.15),
-      }));
-    }, 1000);
-
-    return () => clearInterval(statInterval);
-  }, []);
-
   // Function to collect rendang
   const collectRendang = () => {
     setCollectingIngredient({
@@ -746,13 +711,10 @@ function Padang({ onReturn }) {
       emoji: "🍛",
       position: rendangPosition,
     });
-
+    
     setTimeout(() => {
       // Set hunger to 100% and show stat increase animation
-      setStats((prevStats) => ({
-        ...prevStats,
-        hunger: 100,
-      }));
+      props.stats.hunger = 100;
 
       // Add floating text animation showing hunger restored
       const hungerText = document.createElement("div");
@@ -787,153 +749,71 @@ function Padang({ onReturn }) {
         overflow: "hidden",
       }}
     >
-      {/* Add Stat Bars */}
-      <div
-        className="stat-bars"
-        style={{
-          position: "fixed",
-          top: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 1000,
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          padding: "15px",
-          borderRadius: "10px",
-          border: "2px solid #ffd700",
-          display: "flex",
-          gap: "15px",
-        }}
-      >
-        {/* Happiness Bar */}
-        <div style={{ width: "150px" }}>
-          <div
-            style={{
-              color: "#fff",
-              marginBottom: "5px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            Happiness
-          </div>
-          <div
-            style={{
-              width: "100%",
-              height: "15px",
-              backgroundColor: "#333",
-              borderRadius: "10px",
-              overflow: "hidden",
-              border: "1px solid #666",
-            }}
-          >
+      {/* Stat Bar (SAMA DENGAN JAKARTA/MAIN MAP) */}
+      <div className="character-stats">
+        <div className="stat-item">
+          <span>Happiness:</span>
+          <div className="stat-bar happiness-bar">
             <div
+              className="stat-fill"
               style={{
-                width: `${stats.happiness}%`,
-                height: "100%",
-                backgroundColor: "#FFD700",
-                transition: "width 0.3s ease",
+                width: `${props.stats.happiness}%`,
+                imageRendering: "pixelated",
+                border: "1.5px solid #222",
               }}
-            />
+            >
+              <div className="stat-percentage">{Math.round(props.stats.happiness)}%</div>
           </div>
         </div>
-
-        {/* Hunger Bar */}
-        <div style={{ width: "150px" }}>
-          <div
-            style={{
-              color: "#fff",
-              marginBottom: "5px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            Hunger
           </div>
-          <div
-            style={{
-              width: "100%",
-              height: "15px",
-              backgroundColor: "#333",
-              borderRadius: "10px",
-              overflow: "hidden",
-              border: "1px solid #666",
-            }}
-          >
+        <div className="stat-item">
+          <span>Hunger:</span>
+          <div className="stat-bar hunger-bar">
             <div
+              className="stat-fill"
               style={{
-                width: `${stats.hunger}%`,
-                height: "100%",
-                backgroundColor: "#FF6B6B",
-                transition: "width 0.3s ease",
+                width: `${props.stats.hunger}%`,
+                imageRendering: "pixelated",
+                border: "1.5px solid #222",
               }}
-            />
+            >
+              <div className="stat-percentage">{Math.round(props.stats.hunger)}%</div>
+        </div>
           </div>
         </div>
-
-        {/* Hygiene Bar */}
-        <div style={{ width: "150px" }}>
-          <div
-            style={{
-              color: "#fff",
-              marginBottom: "5px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            Hygiene
-          </div>
-          <div
-            style={{
-              width: "100%",
-              height: "15px",
-              backgroundColor: "#333",
-              borderRadius: "10px",
-              overflow: "hidden",
-              border: "1px solid #666",
-            }}
-          >
+        <div className="stat-item">
+          <span>Sleep:</span>
+          <div className="stat-bar sleep-bar">
             <div
+              className="stat-fill"
               style={{
-                width: `${stats.hygiene}%`,
-                height: "100%",
-                backgroundColor: "#4CAF50",
-                transition: "width 0.3s ease",
+                width: `${props.stats.sleep}%`,
+                imageRendering: "pixelated",
+                border: "1.5px solid #222",
               }}
-            />
+            >
+              <div className="stat-percentage">{Math.round(props.stats.sleep)}%</div>
+          </div>
           </div>
         </div>
-
-        {/* Sleep Bar */}
-        <div style={{ width: "150px" }}>
-          <div
-            style={{
-              color: "#fff",
-              marginBottom: "5px",
-              fontSize: "14px",
-              textAlign: "center",
-            }}
-          >
-            Sleep
-          </div>
-          <div
-            style={{
-              width: "100%",
-              height: "15px",
-              backgroundColor: "#333",
-              borderRadius: "10px",
-              overflow: "hidden",
-              border: "1px solid #666",
-            }}
-          >
+        <div className="stat-item">
+          <span>Hygiene:</span>
+          <div className="stat-bar hygiene-bar">
             <div
+              className="stat-fill"
               style={{
-                width: `${stats.sleep}%`,
-                height: "100%",
-                backgroundColor: "#2196F3",
-                transition: "width 0.3s ease",
+                width: `${props.stats.hygiene}%`,
+                imageRendering: "pixelated",
+                border: "1.5px solid #222",
               }}
-            />
+            >
+              <div className="stat-percentage">{Math.round(props.stats.hygiene)}%</div>
+            </div>
           </div>
+        </div>
+        <div className="stat-item gold-item">
+          <span>Gold:</span>
+          <span className="gold-amount">{props.stats.gold || 0}</span>
         </div>
       </div>
 
@@ -976,60 +856,60 @@ function Padang({ onReturn }) {
 
       {/* NPCs */}
       {npcs.map((npc) => (
-        <div key={npc.id}>
-          <div
-            style={{
-              position: "absolute",
-              left: `${npc.x}px`,
-              top: `${npc.y}px`,
+          <div key={npc.id}>
+            <div
+              style={{
+                position: "absolute",
+                left: `${npc.x}px`,
+                top: `${npc.y}px`,
               width: `${CHARACTER_SIZE_PERCENT * 100}vw`,
               height: `${CHARACTER_SIZE_PERCENT * 100}vw`,
-              backgroundImage: `url('/Picture/${npc.image}.png')`,
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-              zIndex: 90,
-            }}
-          />
+                backgroundImage: `url('/Picture/${npc.image}.png')`,
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center",
+                zIndex: 90,
+              }}
+            />
           {/* BUG FIX:
             Kondisi diubah untuk memeriksa state 'nearNPC' yang sudah dihitung dengan benar,
             bukan menghitung ulang jarak dengan sistem koordinat yang salah.
           */}
           {nearNPC && nearNPC.id === npc.id && (
-            <button
-              className="npc-interaction-button"
-              onClick={() => handleDialog(npc)}
-              style={{
-                position: "absolute",
+              <button
+                className="npc-interaction-button"
+                onClick={() => handleDialog(npc)}
+                style={{
+                  position: "absolute",
                 left: `${
                   npc.x + (CHARACTER_SIZE_PERCENT * window.innerWidth) / 2
                 }px`,
-                top: `${npc.y - 40}px`,
-                transform: "translateX(-50%)",
-                zIndex: 1000,
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                color: "white",
-                padding: "8px 15px",
-                borderRadius: "5px",
-                border: "2px solid #ffd700",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                fontSize: "14px",
-                boxShadow: "0 0 10px rgba(255, 215, 0, 0.3)",
-                transition: "all 0.3s ease",
-              }}
-            >
-              Talk to {npc.name}
-            </button>
-          )}
-        </div>
+                  top: `${npc.y - 40}px`,
+                  transform: "translateX(-50%)",
+                  zIndex: 1000,
+                  backgroundColor: "rgba(0, 0, 0, 0.8)",
+                  color: "white",
+                  padding: "8px 15px",
+                  borderRadius: "5px",
+                  border: "2px solid #ffd700",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  fontSize: "14px",
+                  boxShadow: "0 0 10px rgba(255, 215, 0, 0.3)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                Talk to {npc.name}
+              </button>
+            )}
+          </div>
       ))}
 
       {/* Welcome Messages */}
       {showWelcome && (
         <>
           <div className="welcome-message">Selamat Datang di Kota Padang</div>
-
+          
           <div className="mission-text">MISI: Membuat Rendang Padang</div>
 
           <div className="instruction-text">
@@ -1110,12 +990,12 @@ function Padang({ onReturn }) {
                     : "speaker-npc"
                 }`}
               >
-                <div
+                <div 
                   className="speaker-icon"
                   style={{
                     backgroundImage:
                       currentDialog.speaker === "Player"
-                        ? `url('/Picture/${selectedCharacter}-idle.png')`
+                      ? `url('/Picture/${selectedCharacter}-idle.png')`
                         : `url('/Picture/npc_${currentDialog.speaker.toLowerCase()}.png')`,
                   }}
                 />
@@ -1127,18 +1007,28 @@ function Padang({ onReturn }) {
                 {typedText}
                 {isTyping && <span className="dialog-cursor" />}
               </div>
+              {/* Fast Forward Button */}
+              {isTyping && (
+                <button
+                  className="fast-forward-btn"
+                  onClick={handleFastForward}
+                >
+                  Fast Forward
+                </button>
+              )}
             </div>
             <div className={`dialog-options ${showOptions ? "show" : ""}`}>
               {!isTyping &&
+                currentDialog.options &&
                 currentDialog.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => currentDialog.onSelect(index)}
-                    className="dialog-option"
-                  >
-                    {option}
-                  </button>
-                ))}
+                <button
+                  key={index}
+                  onClick={() => currentDialog.onSelect(index)}
+                  className="dialog-option"
+                >
+                  {option}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -1180,7 +1070,7 @@ function Padang({ onReturn }) {
       {/* Ingredient Collection Animation */}
       {collectingIngredient && (
         <>
-          <div
+          <div 
             className="ingredient-collect"
             style={{
               left: `${collectingIngredient.position.x}px`,
@@ -1189,7 +1079,7 @@ function Padang({ onReturn }) {
           >
             {collectingIngredient.emoji}
           </div>
-          <div
+          <div 
             className="ingredient-flash"
             style={{
               left: `${collectingIngredient.position.x - 50}px`,
@@ -1209,8 +1099,8 @@ function Padang({ onReturn }) {
                 <p>Belum ada bahan yang dikumpulkan.</p>
               ) : (
                 inventory.map((item, index) => (
-                  <div
-                    key={index}
+                  <div 
+                    key={index} 
                     className={`inventory-item ${
                       item === lastCollectedItem ? "inventory-item-new" : ""
                     }`}
@@ -1250,7 +1140,7 @@ function Padang({ onReturn }) {
             padding: "20px",
             borderRadius: "10px",
             border: "2px solid #ffd700",
-            zIndex: 1000,
+          zIndex: 1000,
             textAlign: "center",
             color: "#fff",
             maxWidth: "400px",
@@ -1282,7 +1172,7 @@ function Padang({ onReturn }) {
             padding: "20px",
             borderRadius: "10px",
             border: "2px solid #ffd700",
-            zIndex: 1000,
+          zIndex: 1000,
             textAlign: "center",
           }}
         >
@@ -1303,7 +1193,7 @@ function Padang({ onReturn }) {
           >
             <div
               style={{
-                width: `${cookingProgress}%`,
+              width: `${cookingProgress}%`,
                 height: "100%",
                 backgroundColor: "#ffd700",
                 transition: "width 0.3s ease",
@@ -1398,6 +1288,22 @@ function Padang({ onReturn }) {
               transform: translateY(-50px);
               opacity: 0;
             }
+          }
+
+          div.dialog-text-container .fast-forward-btn {
+            margin-top: 10px;
+            background: #ffd700;
+            color: #222;
+            border: 2px solid #222;
+            border-radius: 6px;
+            padding: 4px 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+          }
+          div.dialog-text-container .fast-forward-btn:hover {
+            background: #ffe066;
           }
         `}
       </style>

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
 import { auth } from "../firebase";
 
-function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
+function Papua(props) {
+  if (props.showDeathScreen) return null;
   const [isLeaving, setIsLeaving] = useState(false);
   const [showWelcome, setShowWelcome] = useState(true);
   const [position, setPosition] = useState({ x: 40, y: 30 });
@@ -17,8 +18,8 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [questProgress, setQuestProgress] = useState(() => {
     const saved = localStorage.getItem(questKey);
     return saved ? JSON.parse(saved) : {
-      hasStartedQuest: false,
-      hasSagu: false,
+          hasStartedQuest: false,
+          hasSagu: false,
       hasIkan: false,
       hasKuah: false,
     };
@@ -246,11 +247,11 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   useEffect(() => {
     setQuestProgress((prev) => ({
       ...prev,
-      hasIkan: prev.hasIkan || inventory.includes("Ikan Segar"),
-      hasSagu: prev.hasSagu || inventory.includes("Tepung Sagu"),
-      hasKuah: prev.hasKuah || inventory.includes("Bumbu"),
+      hasIkan: prev.hasIkan || props.inventory.includes("Ikan Segar"),
+      hasSagu: prev.hasSagu || props.inventory.includes("Tepung Sagu"),
+      hasKuah: prev.hasKuah || props.inventory.includes("Bumbu"),
     }));
-  }, [inventory]);
+  }, [props.inventory]);
 
   // Save questProgress to localStorage whenever it changes
   useEffect(() => {
@@ -262,9 +263,9 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   // Check if all ingredients are collected using the *passed* inventory prop
   useEffect(() => {
     const allIngredientsCollected =
-      inventory.includes("Ikan Segar") &&
-      inventory.includes("Tepung Sagu") &&
-      inventory.includes("Bumbu");
+      props.inventory.includes("Ikan Segar") &&
+      props.inventory.includes("Tepung Sagu") &&
+      props.inventory.includes("Bumbu");
 
     if (allIngredientsCollected) {
       if (papedaCount > 0) {
@@ -275,12 +276,12 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
         setShowPapeda(false);
       }
     }
-  }, [papedaCount, inventory]);
+  }, [papedaCount, props.inventory]);
 
   // Function to collect Papeda
   const handleCollectPapeda = useCallback(() => {
     if (papedaCount > 0) {
-      addToInventory("Papeda", -1);
+      props.addToInventory("Papeda", -1);
       setPapedaCount((prev) => prev - 1);
       setShowPapeda(false); // Sembunyikan Papeda setelah dikumpulkan
       setShowCongrats(true); // Tampilkan pesan selamat
@@ -288,7 +289,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
     } else {
       console.log("Papeda sudah habis.");
     }
-  }, [papedaCount, addToInventory]); // Tambahkan addToInventory sebagai dependensi
+  }, [papedaCount, props.addToInventory]); // Tambahkan addToInventory sebagai dependensi
 
   // Add ingredient to inventory with animation
   // Fungsi ini akan memanggil addToInventory yang diteruskan dari Game.js
@@ -298,7 +299,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
       setLastCollectedItem(ingredient);
 
       // Panggil addToInventory dari props (dari Game.js)
-      addToInventory(ingredient);
+      props.addToInventory(ingredient);
 
       // Update questProgress immediately as well, based on what was collected
       setQuestProgress((prev) => {
@@ -314,7 +315,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
         setCollectingIngredient(null);
       }, 1000);
     },
-    [addToInventory]
+    [props.addToInventory]
   );
 
   // Typing animation effect
@@ -432,7 +433,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                         },
                       });
                       setTimeout(() => {
-                        addToInventory("Ikan Segar");
+                        props.addToInventory("Ikan Segar");
                         setCollectingIngredient(null);
                       }, 1000);
 
@@ -478,7 +479,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
               onSelect: (optionIndex) => {
                 if (optionIndex === npc.dialogs.correct) {
                   setQuestProgress({ ...questProgress, hasSagu: true });
-                  addToInventory("Tepung Sagu");
+                  props.addToInventory("Tepung Sagu");
                   setCurrentDialog({
                     ...createDialogMessage(npc.dialogs.success, "Dinozaurus"),
                     options: ["Terima kasih! Saya akan mencari Bebi."],
@@ -506,7 +507,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                               ...questProgress,
                               hasSagu: true,
                             });
-                            addToInventory("Tepung Sagu");
+                            props.addToInventory("Tepung Sagu");
                             setCurrentDialog({
                               ...createDialogMessage(
                                 npc.dialogs.secondSuccess,
@@ -566,7 +567,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   onSelect: (optionIndex) => {
                     if (optionIndex === npc.dialogs.correct) {
                       setQuestProgress({ ...questProgress, hasKuah: true });
-                      addToInventory("Bumbu");
+                      props.addToInventory("Bumbu");
                       // Papeda muncul segera setelah bumbu didapat
                       setShowPapeda(true);
 
@@ -635,8 +636,8 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
 
   // Save stats to localStorage
   useEffect(() => {
-    localStorage.setItem("gameStats", JSON.stringify(stats));
-  }, [stats]);
+    localStorage.setItem("gameStats", JSON.stringify(props.stats));
+  }, [props.stats]);
 
   // Check if character is near an NPC
   const checkNearNPC = (x, y) => {
@@ -678,7 +679,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const handleInteractiveSpot = (spot) => {
     // Apply stat changes
     if (spot.statsEffect) {
-      updateStats(spot.statsEffect);
+      props.updateStats(spot.statsEffect);
       // Optionally, show a temporary message about the interaction
       setShowDialog(true);
       setCurrentDialog({
@@ -821,13 +822,13 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.happiness}%`,
+                width: `${props.stats.happiness}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
               <div className="stat-percentage">
-                {Math.round(stats.happiness)}%
+                {Math.round(props.stats.happiness)}%
               </div>
             </div>
           </div>
@@ -838,12 +839,12 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.hunger}%`,
+                width: `${props.stats.hunger}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
-              <div className="stat-percentage">{Math.round(stats.hunger)}%</div>
+              <div className="stat-percentage">{Math.round(props.stats.hunger)}%</div>
             </div>
           </div>
         </div>
@@ -853,12 +854,12 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.sleep}%`,
+                width: `${props.stats.sleep}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
-              <div className="stat-percentage">{Math.round(stats.sleep)}%</div>
+              <div className="stat-percentage">{Math.round(props.stats.sleep)}%</div>
             </div>
           </div>
         </div>
@@ -868,20 +869,20 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             <div
               className="stat-fill"
               style={{
-                width: `${stats.hygiene}%`,
+                width: `${props.stats.hygiene}%`,
                 imageRendering: "pixelated",
                 border: "1.5px solid #222",
               }}
             >
               <div className="stat-percentage">
-                {Math.round(stats.hygiene)}%
+                {Math.round(props.stats.hygiene)}%
               </div>
             </div>
           </div>
         </div>
         <div className="stat-item gold-item">
           <span>Gold:</span>
-          <span className="gold-amount">{stats.gold || 0}</span>
+          <span className="gold-amount">{props.stats.gold || 0}</span>
         </div>
       </div>
 
@@ -1176,7 +1177,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             setCurrentDialog(null);
           }
           setIsLeaving(true);
-          setTimeout(onReturn, 1000);
+          setTimeout(props.onReturn, 1000);
         }}
         style={{
           position: "fixed",
@@ -1265,7 +1266,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                 padding: "10px",
               }}
             >
-              {inventory.length === 0 ? (
+              {props.inventory.length === 0 ? (
                 <div
                   style={{
                     color: "#888",
@@ -1277,7 +1278,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   Inventory kosong
                 </div>
               ) : (
-                inventory.map((item, index) => (
+                props.inventory.map((item, index) => (
                   <div
                     key={index}
                     style={{
@@ -1320,12 +1321,12 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                       <button
                         onClick={() => {
                           // Update stats
-                          updateStats({
-                            happiness: Math.min(100, stats.happiness + 30),
-                            hunger: Math.min(100, stats.hunger + 40),
+                          props.updateStats({
+                            happiness: Math.min(100, props.stats.happiness + 30),
+                            hunger: Math.min(100, props.stats.hunger + 40),
                           });
                           // Remove one Papeda from inventory
-                          addToInventory("Papeda", -1);
+                          props.addToInventory("Papeda", -1);
                           // Show message
                           setShowDialog(true);
                           setCurrentDialog({

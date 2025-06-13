@@ -483,8 +483,18 @@ function Game() {
   }, [unlockedTowns]);
 
   const isTownAccessible = (townId) => {
-    if (townId === "home") return true;
-    return unlockedTowns[townId] || false;
+    if (townId === "home" || townId === "jakarta") return true;
+    if (unlockedTowns[townId]) return true;
+    if (townId === "padang") {
+      return inventory.some(item => item.name === "Kerak Telor");
+    }
+    if (townId === "papua") {
+      return inventory.some(item => item.name === "Rendang");
+    }
+    if (townId === "magelang") {
+      return inventory.some(item => item.name === "Papeda");
+    }
+    return false;
   };
 
   const unlockTown = (townId) => {
@@ -550,13 +560,13 @@ function Game() {
           });
         } else if (option === 1) {
           setCurrentDialog({
-            text: "Saya bisa membantu kamu membeli akses ke kota-kota berikut:\n\n1. Magelang (300 emas)\n2. Padang (500 emas)\n3. Papua (700 emas)\n\nKota mana yang ingin kamu buka?",
+            text: "Saya bisa membantu kamu membeli akses ke kota-kota berikut:\n\n1. Padang (300 emas)\n2. Papua (500 emas)\n3. Magelang (700 emas)\n\nKota mana yang ingin kamu buka?",
             speaker: "El Pemandu",
-            options: ["Magelang", "Padang", "Papua", "Kembali"],
+            options: ["Padang", "Papua", "Magelang", "Kembali"],
             onSelect: (townOption) => {
-              const townPrices = { magelang: 300, padang: 500, papua: 700 };
-              const townNames = { magelang: "Magelang", padang: "Padang", papua: "Papua" };
-              const selectedTown = ["magelang", "padang", "papua", "kembali"][townOption];
+              const townPrices = { padang: 300, papua: 500, magelang: 700 };
+              const townNames = { padang: "Padang", papua: "Papua", magelang: "Magelang" };
+              const selectedTown = ["padang", "papua", "magelang", "kembali"][townOption];
 
               if (townOption === 3) {
                 setShowDialog(false);
@@ -573,16 +583,18 @@ function Game() {
               }
               if (stats.gold >= townPrices[selectedTown]) {
                 handleUpdateStats({ gold: stats.gold - townPrices[selectedTown] });
-                unlockTown(selectedTown);
-                setCurrentDialog({
-                  text: `Selamat! Kamu telah membeli akses ke ${townNames[selectedTown]}!`,
-                  speaker: "El Pemandu",
-                  options: ["OK"],
-                  onSelect: () => setShowDialog(false),
-                });
+                setTimeout(() => {
+                  unlockTown(selectedTown);
+                  setCurrentDialog({
+                    text: `Selamat! Kamu telah membeli akses ke ${townNames[selectedTown]}!`,
+                    speaker: "El Pemandu",
+                    options: ["OK"],
+                    onSelect: () => setShowDialog(false),
+                  });
+                }, 100);
               } else {
                 setCurrentDialog({
-                  text: `Maaf, emas kamu tidak cukup. Kamu membutuhkan ${townPrices[selectedTown]} emas untuk membuka akses ke ${townNames[selectedTown]}.`,
+                  text: `Maaf, gold anda tidak cukup. Silakan bekerja di Rumah atau di SCBD Jakarta untuk mendapatkan gold.`,
                   speaker: "El Pemandu",
                   options: ["OK"],
                   onSelect: () => setShowDialog(false),
@@ -662,6 +674,16 @@ function Game() {
   };
 
   const handleReturnToCharacterSelect = () => {
+    if (userId) {
+      const initialStats = { happiness: 100, hunger: 100, sleep: 100, hygiene: 100, gold: 0 };
+      localStorage.setItem(`stats_${userId}`, JSON.stringify(initialStats));
+      localStorage.setItem(`inventory_${userId}`, JSON.stringify([]));
+      localStorage.setItem(`progress_${userId}`, JSON.stringify({}));
+      localStorage.setItem(`jakartaProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasTelur: false, hasNasi: false, hasBumbu: false }));
+      localStorage.setItem(`padangProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasDaging: false, hasSantan: false, hasCabai: false }));
+      localStorage.setItem(`magelangQuestProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasKupat: false, hasTahu: false, hasBumbuKuah: false }));
+      localStorage.setItem(`papuaProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasSagu: false, hasIkan: false, hasKuah: false }));
+    }
     localStorage.clear();
     navigate("/");
   };
@@ -669,10 +691,21 @@ function Game() {
   const restartGame = () => {
     const initialStats = { happiness: 100, hunger: 100, sleep: 100, hygiene: 100, gold: 0 };
     setStats(initialStats);
-    localStorage.setItem("gameStats", JSON.stringify(initialStats));
+    setInventory([]);
+    setProgress({});
+    if (userId) {
+      localStorage.setItem(`stats_${userId}`, JSON.stringify(initialStats));
+      localStorage.setItem(`inventory_${userId}`, JSON.stringify([]));
+      localStorage.setItem(`progress_${userId}`, JSON.stringify({}));
+      localStorage.setItem(`jakartaProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasTelur: false, hasNasi: false, hasBumbu: false }));
+      localStorage.setItem(`padangProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasDaging: false, hasSantan: false, hasCabai: false }));
+      localStorage.setItem(`magelangQuestProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasKupat: false, hasTahu: false, hasBumbuKuah: false }));
+      localStorage.setItem(`papuaProgress_${userId}`, JSON.stringify({ hasStartedQuest: false, hasSagu: false, hasIkan: false, hasKuah: false }));
+    }
     setGameTime({ hours: 6, minutes: 0, day: 1 });
     setPosition({ x: 50, y: 50 });
     setShowDeathScreen(false);
+    setCurrentTown(null);
   };
 
   const handleCheckOut = () => {
@@ -766,44 +799,17 @@ function Game() {
     }
   }, [stats, calculateScore]);
 
-  // *** CHANGED: This is the main part of the fix. ***
-  // I've updated the `updateStats` prop for all towns to use the new `handleUpdateStats` function.
-  if (currentTown) {
-    const townProps = {
-      onReturn: returnToMainMap,
-      stats: stats,
-      updateStats: handleUpdateStats, // Use the correct, refactored function
-      inventory: inventory,
-      addToInventory: (item, quantity = 1) => {
-        setInventory((prev) => {
-          const newInventory = [...prev];
-          const existingItem = newInventory.find((i) => i.name === item);
-          if (existingItem) {
-            existingItem.quantity += quantity;
-          } else {
-            newInventory.push({ name: item, quantity });
-          }
-          return newInventory;
-        });
-      },
-    };
-
-    switch (currentTown) {
-      case "jakarta":
-        return <Jakarta {...townProps} />;
-      case "padang":
-        return <Padang {...townProps} />;
-      case "papua":
-        return <Papua {...townProps} />;
-      case "magelang":
-        return <Magelang {...townProps} />;
-      case "home":
-        // Home has extra props for its specific actions
-        return <Home {...townProps} work={work} eat={eat} sleep={sleep} />;
-      default:
-        return null;
+  // Global game over logic
+  useEffect(() => {
+    if (
+      stats.hunger <= 0 ||
+      stats.sleep <= 0 ||
+      stats.hygiene <= 0 ||
+      stats.happiness <= 0
+    ) {
+      setShowDeathScreen(true);
     }
-  }
+  }, [stats]);
 
   if (showDeathScreen) {
     return (
@@ -833,6 +839,44 @@ function Game() {
         </div>
       </div>
     );
+  }
+
+  if (currentTown) {
+    const townProps = {
+      onReturn: returnToMainMap,
+      stats: stats,
+      updateStats: handleUpdateStats, // Use the correct, refactored function
+      inventory: inventory,
+      addToInventory: (item, quantity = 1) => {
+        setInventory((prev) => {
+          const newInventory = [...prev];
+          const existingItem = newInventory.find((i) => i.name === item);
+          if (existingItem) {
+            existingItem.quantity += quantity;
+          } else {
+            newInventory.push({ name: item, quantity });
+          }
+          return newInventory;
+        });
+      },
+      showDeathScreen: showDeathScreen,
+    };
+
+    switch (currentTown) {
+      case "jakarta":
+        return <Jakarta {...townProps} />;
+      case "padang":
+        return <Padang {...townProps} />;
+      case "papua":
+        return <Papua {...townProps} />;
+      case "magelang":
+        return <Magelang {...townProps} />;
+      case "home":
+        // Home has extra props for its specific actions
+        return <Home {...townProps} work={work} eat={eat} sleep={sleep} showDeathScreen={showDeathScreen} />;
+      default:
+        return null;
+    }
   }
 
   return (
@@ -934,9 +978,6 @@ function Game() {
             </div>
           </div>
         )}
-        <div className="coordinates-display">
-          X: {Math.round(position.x)}% Y: {Math.round(position.y)}%
-        </div>
         <div className="action-bar">
           <button className="inventory-button" onClick={toggleInventory}>Inventory</button>
           {nearSign && <button className="explore-button" onClick={handleCheckOut}>Check out {nearSign.name}</button>}

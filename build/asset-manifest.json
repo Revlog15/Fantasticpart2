@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/static/css/main.cb8cd682.css",
+    "main.js": "/static/js/main.1ec4a07e.js",
+    "static/js/453.5436bbd9.chunk.js": "/static/js/453.5436bbd9.chunk.js",
+    "static/media/Background_Login.png": "/static/media/Background_Login.c03833909e43442a621d.png",
+    "static/media/map-utama.jpg": "/static/media/map-utama.eee915f9c05262c8b5f1.jpg",
+    "index.html": "/index.html",
+    "main.cb8cd682.css.map": "/static/css/main.cb8cd682.css.map",
+    "main.1ec4a07e.js.map": "/static/js/main.1ec4a07e.js.map",
+    "453.5436bbd9.chunk.js.map": "/static/js/453.5436bbd9.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.cb8cd682.css",
+    "static/js/main.1ec4a07e.js"
+  ]
+}

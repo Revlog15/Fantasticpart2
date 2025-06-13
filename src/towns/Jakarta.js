@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
+import { auth } from "../firebase";
 
 function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [isLeaving, setIsLeaving] = useState(false);
@@ -11,16 +12,16 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
+  const userId = auth.currentUser?.uid;
+  const questKey = userId ? `jakartaProgress_${userId}` : "jakartaProgress";
   const [questProgress, setQuestProgress] = useState(() => {
-    const saved = localStorage.getItem("jakartaProgress");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          hasStartedQuest: false,
-          hasTelur: false,
-          hasNasi: false,
-          hasBumbu: false,
-        };
+    const saved = localStorage.getItem(questKey);
+    return saved ? JSON.parse(saved) : {
+      hasStartedQuest: false,
+      hasTelur: false,
+      hasNasi: false,
+      hasBumbu: false,
+    };
   });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const CHARACTER_SIZE = 150;
@@ -895,8 +896,10 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
 
   // Save progress to localStorage
   useEffect(() => {
-    localStorage.setItem("jakartaProgress", JSON.stringify(questProgress));
-  }, [questProgress]);
+    if (userId) {
+      localStorage.setItem(questKey, JSON.stringify(questProgress));
+    }
+  }, [questProgress, userId]);
 
   const handleSignInteraction = () => {
     if (nearSign) {
@@ -932,7 +935,7 @@ function Jakarta({ onReturn, stats, updateStats, inventory, addToInventory }) {
       // Inventory di Game.js
       // const savedInventory = localStorage.getItem("jakartaInventory");
       // if (savedInventory) setInventory(JSON.parse(savedInventory));
-      const savedProgress = localStorage.getItem("jakartaProgress");
+      const savedProgress = localStorage.getItem(questKey);
       if (savedProgress) setQuestProgress(JSON.parse(savedProgress));
     }
     reloadFromStorage();

@@ -28,8 +28,24 @@ function Game() {
   const [moveInterval, setMoveInterval] = useState(null);
   const positionRef = useRef(position);
 
+  const userId = auth.currentUser?.uid;
+
+  // Inventory per user
+  const [inventory, setInventory] = useState(() => {
+    const key = userId ? `inventory_${userId}` : "gameInventory";
+    const savedInventory = localStorage.getItem(key);
+    return savedInventory ? JSON.parse(savedInventory) : [];
+  });
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(`inventory_${userId}`, JSON.stringify(inventory));
+    }
+  }, [inventory, userId]);
+
+  // Stats per user
   const [stats, setStats] = useState(() => {
-    const savedStats = localStorage.getItem("gameStats");
+    const key = userId ? `stats_${userId}` : "gameStats";
+    const savedStats = localStorage.getItem(key);
     return savedStats
       ? JSON.parse(savedStats)
       : {
@@ -40,6 +56,23 @@ function Game() {
           gold: 0,
         };
   });
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(`stats_${userId}`, JSON.stringify(stats));
+    }
+  }, [stats, userId]);
+
+  // Progress quest per user (jika ada)
+  const [progress, setProgress] = useState(() => {
+    const key = userId ? `progress_${userId}` : "gameProgress";
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : {};
+  });
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(`progress_${userId}`, JSON.stringify(progress));
+    }
+  }, [progress, userId]);
 
   const [gameTime, setGameTime] = useState({
     hours: 6,
@@ -47,10 +80,6 @@ function Game() {
     day: 1,
   });
 
-  const [inventory, setInventory] = useState(() => {
-    const savedInventory = localStorage.getItem("gameInventory");
-    return savedInventory ? JSON.parse(savedInventory) : [];
-  });
   const [showInventory, setShowInventory] = useState(false);
   const [currentTown, setCurrentTown] = useState(null);
   const [showExploreButton, setShowExploreButton] = useState(false);

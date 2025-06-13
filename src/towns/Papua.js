@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import "./Town.css";
+import { auth } from "../firebase";
 
 function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [isLeaving, setIsLeaving] = useState(false);
@@ -11,23 +12,15 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [showDialog, setShowDialog] = useState(false);
   const [currentDialog, setCurrentDialog] = useState([]);
   const [showInventory, setShowInventory] = useState(false);
+  const userId = auth.currentUser?.uid;
+  const questKey = userId ? `papuaProgress_${userId}` : "papuaProgress";
   const [questProgress, setQuestProgress] = useState(() => {
-    const savedQuestProgress = localStorage.getItem("papuaQuestProgress");
-    const initialProgress = savedQuestProgress
-      ? JSON.parse(savedQuestProgress)
-      : {
-          hasStartedQuest: false,
-          hasIkan: false,
-          hasSagu: false,
-          hasBumbu: false,
-        };
-
-    // Check initial inventory for already collected items to ensure persistence
-    return {
-      ...initialProgress,
-      hasIkan: initialProgress.hasIkan || inventory.includes("Ikan Segar"),
-      hasSagu: initialProgress.hasSagu || inventory.includes("Tepung Sagu"),
-      hasBumbu: initialProgress.hasBumbu || inventory.includes("Bumbu"),
+    const saved = localStorage.getItem(questKey);
+    return saved ? JSON.parse(saved) : {
+      hasStartedQuest: false,
+      hasSagu: false,
+      hasIkan: false,
+      hasKuah: false,
     };
   });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
@@ -255,14 +248,16 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
       ...prev,
       hasIkan: prev.hasIkan || inventory.includes("Ikan Segar"),
       hasSagu: prev.hasSagu || inventory.includes("Tepung Sagu"),
-      hasBumbu: prev.hasBumbu || inventory.includes("Bumbu"),
+      hasKuah: prev.hasKuah || inventory.includes("Bumbu"),
     }));
   }, [inventory]);
 
   // Save questProgress to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem("papuaQuestProgress", JSON.stringify(questProgress));
-  }, [questProgress]);
+    if (userId) {
+      localStorage.setItem(questKey, JSON.stringify(questProgress));
+    }
+  }, [questProgress, userId]);
 
   // Check if all ingredients are collected using the *passed* inventory prop
   useEffect(() => {
@@ -310,7 +305,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
         let updatedProgress = { ...prev };
         if (ingredient === "Ikan Segar") updatedProgress.hasIkan = true;
         if (ingredient === "Tepung Sagu") updatedProgress.hasSagu = true;
-        if (ingredient === "Bumbu") updatedProgress.hasBumbu = true;
+        if (ingredient === "Bumbu") updatedProgress.hasKuah = true;
         return updatedProgress;
       });
 
@@ -385,7 +380,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
             });
           },
         });
-      } else if (questProgress.hasIkan && questProgress.hasSagu && questProgress.hasBumbu) {
+      } else if (questProgress.hasIkan && questProgress.hasSagu && questProgress.hasKuah) {
         setCurrentDialog({
           text: "Wah, kamu sudah berhasil mengumpulkan semua bahan! Sekarang kamu bisa membuat Papeda yang lezat. Jangan lupa untuk mengumpulkan Papeda yang sudah jadi!",
           speaker: "Merdeka",
@@ -556,7 +551,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
           options: ["Baik, saya akan mengumpulkan bahan-bahannya dulu."],
           onSelect: () => setShowDialog(false),
         });
-      } else if (!questProgress.hasBumbu) {
+      } else if (!questProgress.hasKuah) {
         setCurrentDialog({
           ...createDialogMessage(npc.dialogs.playerGreeting, "Player"),
           options: ["Ya, saya ingin mendapatkan bumbu."],
@@ -570,7 +565,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
                   options: npc.dialogs.options,
                   onSelect: (optionIndex) => {
                     if (optionIndex === npc.dialogs.correct) {
-                      setQuestProgress({ ...questProgress, hasBumbu: true });
+                      setQuestProgress({ ...questProgress, hasKuah: true });
                       addToInventory("Bumbu");
                       // Papeda muncul segera setelah bumbu didapat
                       setShowPapeda(true);
@@ -630,7 +625,7 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
   // Load inventory & progress from localStorage
   useEffect(() => {
     function reloadFromStorage() {
-      const savedProgress = localStorage.getItem("papuaQuestProgress");
+      const savedProgress = localStorage.getItem(questKey);
       if (savedProgress) setQuestProgress(JSON.parse(savedProgress));
     }
     reloadFromStorage();
@@ -1407,8 +1402,8 @@ function Papua({ onReturn, stats, updateStats, inventory, addToInventory }) {
         <div style={{ color: questProgress.hasSagu ? "#00ff00" : "#aaa" }}>
           {questProgress.hasSagu ? "✔" : "✗"} Tepung Sagu
         </div>
-        <div style={{ color: questProgress.hasBumbu ? "#00ff00" : "#aaa" }}>
-          {questProgress.hasBumbu ? "✔" : "✗"} Bumbu
+        <div style={{ color: questProgress.hasKuah ? "#00ff00" : "#aaa" }}>
+          {questProgress.hasKuah ? "✔" : "✗"} Bumbu
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./Town.css";
+import { auth } from "../firebase";
 
 function Padang({ onReturn }) {
   const [isLeaving, setIsLeaving] = useState(false);
@@ -12,12 +13,6 @@ function Padang({ onReturn }) {
   const [currentDialog, setCurrentDialog] = useState({ text: "", speaker: "" });
   const [showInventory, setShowInventory] = useState(false);
   const [inventory, setInventory] = useState([]);
-  const [questProgress, setQuestProgress] = useState({
-    hasStartedQuest: false,
-    hasDaging: false,
-    hasSantan: false,
-    hasCabai: false,
-  });
   const [showQuizOptions, setShowQuizOptions] = useState(false);
   const CHARACTER_SIZE_PERCENT = 0.13; // 15% of viewport width
   const NPC_DETECTION_RADIUS_PERCENT = 0.1; // 10% of viewport width
@@ -45,6 +40,24 @@ function Padang({ onReturn }) {
   const [characterImage, setCharacterImage] = useState(
     `${selectedCharacter}-idle`
   );
+
+  const userId = auth.currentUser?.uid;
+  const questKey = userId ? `padangProgress_${userId}` : "padangProgress";
+  const [questProgress, setQuestProgress] = useState(() => {
+    const saved = localStorage.getItem(questKey);
+    return saved ? JSON.parse(saved) : {
+      hasStartedQuest: false,
+      hasDaging: false,
+      hasSantan: false,
+      hasCabai: false,
+    };
+  });
+
+  useEffect(() => {
+    if (userId) {
+      localStorage.setItem(questKey, JSON.stringify(questProgress));
+    }
+  }, [questProgress, userId]);
 
   // Define NPCs for Padang with their dialogs
   const npcs = [

@@ -45,6 +45,32 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      // Key unik per user
+      const progressKey = `progress_${user.uid}`;
+      const inventoryKey = `inventory_${user.uid}`;
+      const statsKey = `stats_${user.uid}`;
+
+      // Jika user baru (belum ada progress), reset ke default
+      if (!localStorage.getItem(progressKey)) {
+        localStorage.setItem(progressKey, JSON.stringify({}));
+      }
+      if (!localStorage.getItem(inventoryKey)) {
+        localStorage.setItem(inventoryKey, JSON.stringify([]));
+      }
+      if (!localStorage.getItem(statsKey)) {
+        localStorage.setItem(statsKey, JSON.stringify({
+          happiness: 100,
+          hunger: 100,
+          sleep: 100,
+          hygiene: 100,
+          gold: 0,
+        }));
+      }
+    }
+  }, [user]);
+
   if (loading) {
     return (
       <div className="loading-screen">

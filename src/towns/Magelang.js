@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./Town.css";
+import { auth } from "../firebase";
 
 function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
   // Get selected character from localStorage at the very top
@@ -18,8 +19,10 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const [typedText, setTypedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const userId = auth.currentUser?.uid;
+  const questKey = userId ? `magelangQuestProgress_${userId}` : "magelangQuestProgress";
   const [questProgress, setQuestProgress] = useState(() => {
-    const savedQuestProgress = localStorage.getItem("magelangQuestProgress");
+    const savedQuestProgress = localStorage.getItem(questKey);
     return savedQuestProgress ? JSON.parse(savedQuestProgress) : {
       hasStartedQuest: false,
       hasKupat: false,
@@ -33,6 +36,10 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
   const NPC_DETECTION_RADIUS = 2;
   const [currentSpeaker, setCurrentSpeaker] = useState(null);
   const [speakerIcon, setSpeakerIcon] = useState(null);
+  const [showCookingAnimation, setShowCookingAnimation] = useState(false);
+  const [showKupatTahuIcon, setShowKupatTahuIcon] = useState(false);
+  const [cookingProgress, setCookingProgress] = useState(0);
+  const [showCongrats, setShowCongrats] = useState(false);
 
   // Function to proceed to the next dialog line or close the dialog
   const handleProceed = () => {
@@ -472,8 +479,10 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
 
   // Save quest progress to localStorage
   useEffect(() => {
-    localStorage.setItem("magelangQuestProgress", JSON.stringify(questProgress));
-  }, [questProgress]);
+    if (userId) {
+      localStorage.setItem(questKey, JSON.stringify(questProgress));
+    }
+  }, [questProgress, userId]);
 
   useEffect(() => {
     // Hide welcome messages after 7 seconds
@@ -491,6 +500,40 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
       clearTimeout(cloudsTimer);
     };
   }, []);
+
+  // Fungsi untuk cek semua bahan terkumpul
+  const checkIngredients = () => questProgress.hasKupat && questProgress.hasTahu && questProgress.hasBumbuKuah;
+
+  // Fungsi untuk mulai memasak
+  const handleCooking = () => {
+    setShowCookingAnimation(true);
+    setCookingProgress(0);
+    const interval = setInterval(() => {
+      setCookingProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setShowCookingAnimation(false);
+          setShowKupatTahuIcon(true);
+          setShowCongrats(true);
+          setTimeout(() => setShowCongrats(false), 2000);
+          return 100;
+        }
+        return prev + 10;
+      });
+    }, 200);
+  };
+
+  // Fungsi untuk ambil kupat tahu
+  const handleAmbilKupatTahu = () => {
+    setShowKupatTahuIcon(false);
+    // Hapus bahan-bahan dari inventory, ganti dengan Kupat Tahu
+    if (typeof addToInventory === 'function') {
+      addToInventory("Kupat Tahu");
+    }
+    if (typeof setInventory === 'function') {
+      setInventory(["Kupat Tahu"]);
+    }
+  };
 
   return (
     <div className="town-container" style={{ backgroundImage: `url(${process.env.PUBLIC_URL}/Picture/kota-magelang.jpg)` }}>
@@ -818,6 +861,38 @@ function Magelang({ onReturn, stats, updateStats, inventory, addToInventory }) {
           {questProgress.hasBumbuKuah ? "✔" : "✗"} Bumbu Kuah
         </div>
       </div>
+
+      {/* Tombol Masak muncul jika semua bahan terkumpul dan belum ada kupat tahu */}
+      {checkIngredients() && !showCookingAnimation && !showKupatTahuIcon && (
+        <button className="cook-button" onClick={handleCooking}>
+          Masak Kupat Tahu
+        </button>
+      )}
+
+      {/* Animasi memasak */}
+      {showCookingAnimation && (
+        <div className="cooking-animation">
+          <div className="cooking-progress">
+            <div className="progress-bar" style={{ width: `${cookingProgress}%` }} />
+            <div className="progress-text">Memasak Kupat Tahu... {cookingProgress}%</div>
+          </div>
+        </div>
+      )}
+
+      {/* Icon kupat tahu muncul setelah animasi */}
+      {showKupatTahuIcon && (
+        <div className="kupat-tahu" style={{ left: '50%', top: '60%', position: 'absolute', cursor: 'pointer', zIndex: 200 }} onClick={handleAmbilKupatTahu}>
+          <img src={`${process.env.PUBLIC_URL}/Picture/kupat_tahu.png`} alt="Kupat Tahu" className="kupat-tahu-image" />
+          <div style={{ color: '#4caf50', fontWeight: 'bold', textAlign: 'center' }}>Ambil Kupat Tahu</div>
+        </div>
+      )}
+
+      {/* Pesan selamat */}
+      {showCongrats && (
+        <div className="congrats-message">
+          Selamat! Kupat Tahu berhasil dibuat!
+        </div>
+      )}
     </div>
   );
 }

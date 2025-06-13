@@ -264,7 +264,7 @@ function Magelang(props) {
           onSelect: (optionIndex) => {
             if (optionIndex === 0) { // Gunung Merapi
               setQuestProgress({ ...questProgress, hasKupat: true });
-              addToInventory("Kupat");
+              props.addToInventory("Kupat");
               setCurrentDialog([{
                 text: "Benar! Gunung Merapi adalah gunung berapi aktif yang menjadi ikon Magelang. Ini kupat terbaik untukmu!",
                 options: ["Terima kasih!"],
@@ -295,21 +295,25 @@ function Magelang(props) {
     } else if (npc.name === "Bebi") {
       if (!questProgress.hasStartedQuest) {
         setCurrentDialog([{
-          text: String(npc.dialogs.withoutQuest), // Ensure withoutQuest is string
+          text: String(npc.dialogs.withoutQuest),
           options: ["Baik, saya akan menemui Anosheep dulu."],
           onSelect: handleProceed,
           speaker: "Bebi",
           icon: `${process.env.PUBLIC_URL}/Picture/npc_bebi.png`,
         }]);
       } else if (!questProgress.hasBumbuKuah) {
-        const bebiText = String(npc.dialogs.withQuest) + "\n\n" + String(npc.dialogs.question); // Ensure both parts are strings
+        const bebiText = String(npc.dialogs.withQuest) + "\n\n" + String(npc.dialogs.question);
         setCurrentDialog([{
           text: bebiText,
           options: ["Candi Borobudur", "Candi Prambanan", "Candi Mendut", "Candi Pawon"],
           onSelect: (optionIndex) => {
             if (optionIndex === 0) { // Candi Borobudur
               setQuestProgress({ ...questProgress, hasBumbuKuah: true });
-              addToInventory("Bumbu Kuah");
+              props.addToInventory("Bumbu Kuah");
+              // Langsung tampilkan icon Kupat Tahu setelah dapat bumbu kuah
+              setShowKupatTahuIcon(true);
+              setShowCongrats(true);
+              setTimeout(() => setShowCongrats(false), 2000);
               setCurrentDialog([{
                 text: "Benar sekali! Candi Borobudur adalah warisan dunia yang sangat berharga. Ini bumbu kuah untuk Kupat Tahu Magelangmu!",
                 options: ["Terima kasih!"],
@@ -354,7 +358,7 @@ function Magelang(props) {
           onSelect: (optionIndex) => {
             if (optionIndex === 0) { // Museum Dirgantara
               setQuestProgress({ ...questProgress, hasTahu: true });
-              addToInventory("Tahu");
+              props.addToInventory("Tahu");
               setCurrentDialog([{
                 text: "Benar sekali! Museum Dirgantara adalah museum yang menyimpan sejarah penerbangan Indonesia. Ini tahu terbaik untuk Kupat Tahu Magelangmu!",
                 options: ["Terima kasih!"],
@@ -475,7 +479,7 @@ function Magelang(props) {
     setIsLeaving(true);
     setShowClouds(true);
     setTimeout(() => {
-      onReturn();
+      props.onReturn();
     }, 800);
   };
 
@@ -503,37 +507,49 @@ function Magelang(props) {
     };
   }, []);
 
-  // Fungsi untuk cek semua bahan terkumpul
-  const checkIngredients = () => questProgress.hasKupat && questProgress.hasTahu && questProgress.hasBumbuKuah;
-
-  // Fungsi untuk mulai memasak
-  const handleCooking = () => {
-    setShowCookingAnimation(true);
-    setCookingProgress(0);
-    const interval = setInterval(() => {
-      setCookingProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setShowCookingAnimation(false);
-          setShowKupatTahuIcon(true);
-          setShowCongrats(true);
-          setTimeout(() => setShowCongrats(false), 2000);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
-  };
+  // UseEffect untuk otomatis mulai animasi memasak jika semua bahan terkumpul dan Kupat Tahu belum dibuat
+  useEffect(() => {
+    if (
+      questProgress.hasKupat &&
+      questProgress.hasTahu &&
+      questProgress.hasBumbuKuah &&
+      !showCookingAnimation &&
+      !showKupatTahuIcon
+    ) {
+      setShowCookingAnimation(true);
+      setCookingProgress(0);
+      const interval = setInterval(() => {
+        setCookingProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setShowCookingAnimation(false);
+            setShowKupatTahuIcon(true);
+            setShowCongrats(true);
+            setTimeout(() => setShowCongrats(false), 2000);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [
+    questProgress.hasKupat,
+    questProgress.hasTahu,
+    questProgress.hasBumbuKuah,
+    showCookingAnimation,
+    showKupatTahuIcon,
+  ]);
 
   // Fungsi untuk ambil kupat tahu
   const handleAmbilKupatTahu = () => {
     setShowKupatTahuIcon(false);
     // Hapus bahan-bahan dari inventory, ganti dengan Kupat Tahu
-    if (typeof addToInventory === 'function') {
-      addToInventory("Kupat Tahu");
+    if (typeof props.addToInventory === 'function') {
+      props.addToInventory("Kupat Tahu");
     }
-    if (typeof setInventory === 'function') {
-      setInventory(["Kupat Tahu"]);
+    if (typeof props.setInventory === 'function') {
+      props.setInventory(["Kupat Tahu"]);
     }
   };
 
@@ -740,66 +756,49 @@ function Magelang(props) {
       {/* Dialog Box */}
       {showDialog && currentDialog.length > 0 && (
         <div className="dialog-box">
-          {currentSpeaker && (
-            <div className="dialog-speaker">
-              <div
-                className="speaker-icon"
-                style={{ backgroundImage: `url('${speakerIcon}')` }}
-              ></div>
-              <span className={currentSpeaker === "Player" ? "speaker-player" : "speaker-npc"}>
+          <div className="dialog-content">
+            {currentSpeaker && (
+              <div className={`dialog-speaker ${currentSpeaker === "Player" ? "speaker-player" : "speaker-npc"}`}>
+                <div
+                  className="speaker-icon"
+                  style={{ backgroundImage: `url('${speakerIcon}')` }}
+                ></div>
                 {currentSpeaker}
-              </span>
+              </div>
+            )}
+            <div className="dialog-text-container">
+              <div className="dialog-text">
+                {typedText}
+                {isTyping && <span className="dialog-cursor"></span>}
+              </div>
+              {isTyping && (
+                <button
+                  className="fast-forward-btn"
+                  onClick={() => {
+                    if (typingIntervalRef.current) {
+                      clearInterval(typingIntervalRef.current);
+                      typingIntervalRef.current = null;
+                    }
+                    setTypedText(currentDialog[dialogIndex].text);
+                    setIsTyping(false);
+                    setShowOptions(true);
+                  }}
+                >
+                  Fast Forward
+                </button>
+              )}
             </div>
-          )}
-
-          {isTyping && (
-            <button
-              onClick={() => {
-                if (typingIntervalRef.current) {
-                  clearInterval(typingIntervalRef.current);
-                  typingIntervalRef.current = null;
-                }
-                setTypedText(currentDialog[dialogIndex].text);
-                setIsTyping(false);
-                setShowOptions(true);
-              }}
-              style={{
-                position: "absolute",
-                top: "10px",
-                right: "10px",
-                background: "#ffd700",
-                color: "black",
-                padding: "8px 15px",
-                border: "none",
-                borderRadius: "5px",
-                cursor: "pointer",
-                fontSize: "0.9rem",
-                fontWeight: "bold",
-                zIndex: 1000,
-              }}
-            >
-              Fast Forward
-            </button>
-          )}
-
-          <div className="dialog-text">
-            {typedText}
-            {isTyping && <span className="dialog-cursor"></span>}
-          </div>
-          <div
-            className={`dialog-options ${showOptions ? "show" : ""}`}
-          >
-            {showOptions && currentDialog[dialogIndex].options.map((option, index) => {
-              return (
+            <div className={`dialog-options ${showOptions ? "show" : ""}`}>
+              {!isTyping && currentDialog[dialogIndex].options.map((option, index) => (
                 <button
                   key={index}
                   onClick={() => currentDialog[dialogIndex].onSelect(index)}
-                  disabled={false}
+                  className="dialog-option"
                 >
                   {option}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -826,10 +825,10 @@ function Magelang(props) {
           <div className="inventory-content">
             <h2>Inventory Bahan Tempe Goreng</h2>
             <div className="inventory-items">
-              {inventory.length === 0 ? (
+              {props.inventory.length === 0 ? (
                 <p className="inventory-item-empty">Belum ada bahan yang dikumpulkan.</p>
               ) : (
-                inventory.map((item, index) => (
+                props.inventory.map((item, index) => (
                   <div key={index} className="inventory-item">
                     <h3>
                       {typeof item === "object" && item !== null
@@ -863,13 +862,6 @@ function Magelang(props) {
           {questProgress.hasBumbuKuah ? "✔" : "✗"} Bumbu Kuah
         </div>
       </div>
-
-      {/* Tombol Masak muncul jika semua bahan terkumpul dan belum ada kupat tahu */}
-      {checkIngredients() && !showCookingAnimation && !showKupatTahuIcon && (
-        <button className="cook-button" onClick={handleCooking}>
-          Masak Kupat Tahu
-        </button>
-      )}
 
       {/* Animasi memasak */}
       {showCookingAnimation && (

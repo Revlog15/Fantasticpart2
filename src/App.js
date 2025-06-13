@@ -28,19 +28,20 @@ function App() {
     };
 
     // Handle visibility change (tab switch or minimize)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && auth.currentUser) {
-        signOut(auth);
-      }
-    };
+    // Removed sign out on tab switch to prevent redirect to login
+    // const handleVisibilityChange = () => {
+    //   if (document.visibilityState === 'hidden' && auth.currentUser) {
+    //     signOut(auth);
+    //   }
+    // };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsubscribe();
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
